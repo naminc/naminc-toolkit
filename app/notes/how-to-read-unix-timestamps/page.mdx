@@ -1,0 +1,73 @@
+import Link from "next/link";
+
+export const metadata = {
+  title: "How to Read a Unix Timestamp",
+  description: "Learn how Unix timestamps represent time, how to identify seconds versus milliseconds, and how time zones affect their display.",
+  alternates: { canonical: "/notes/how-to-read-unix-timestamps" },
+};
+
+<article className="container page-shell article-page">
+
+<header className="article-header">
+  <p className="eyebrow">Naminc notes · 5 min read</p>
+  <h1>How to read a Unix timestamp</h1>
+  <p>Unix timestamps look cryptic, but two quick checks usually tell you what they mean and how to convert them safely.</p>
+</header>
+
+<nav className="article-toc" aria-label="On this page">
+  <strong>On this page</strong>
+  <a href="#what-it-counts">What a timestamp counts</a>
+  <a href="#seconds-or-milliseconds">Seconds or milliseconds</a>
+  <a href="#time-zones">Time zones</a>
+  <a href="#practical-checks">Practical checks</a>
+</nav>
+
+<h2 id="what-it-counts">What a timestamp counts</h2>
+
+A Unix timestamp is a number representing elapsed time since **1970-01-01 00:00:00 UTC**, often called the Unix epoch. A timestamp identifies an instant; it does not contain a time-zone label.
+
+For example, `0` points to the epoch itself. A positive number points to a later instant, while a negative value represents an instant before the epoch.
+
+<h2 id="seconds-or-milliseconds">Seconds or milliseconds?</h2>
+
+The most common formats count either seconds or milliseconds. Current second-based values have about 10 digits. Millisecond-based values have about 13 digits.
+
+| Input | Likely unit | Meaning |
+| --- | --- | --- |
+| `1727000000` | Seconds | A date in 2024 |
+| `1727000000000` | Milliseconds | The same instant |
+
+Digit length is a useful clue, not a formal guarantee. Always check the API or database contract when one exists. JavaScript's `Date` constructor expects milliseconds, while many server APIs and JWT time claims use seconds.
+
+```ts
+const fromSeconds = new Date(unixSeconds * 1000);
+const fromMilliseconds = new Date(unixMilliseconds);
+```
+
+<h2 id="time-zones">Time zones change display, not the instant</h2>
+
+UTC and local time can show different clock values for one timestamp. This is expected. Converting a timestamp to local time applies the device's time-zone offset; it does not alter the instant represented by the timestamp.
+
+ISO 8601 output ending in `Z`, such as `2024-09-22T09:20:00.000Z`, is explicitly UTC. It is a dependable format for logs, APIs, and cross-system comparisons.
+
+<h2 id="practical-checks">Practical checks</h2>
+
+1. Count the digits to form an initial guess about seconds or milliseconds.
+2. Convert the value and confirm that the year is plausible.
+3. Compare UTC when debugging systems across time zones.
+4. Keep the original unit explicit in variable names, schemas, and API documentation.
+
+Do not silently guess units in important application logic. A seconds value interpreted as milliseconds lands near January 1970; a milliseconds value interpreted as seconds is usually outside the supported date range.
+
+<aside className="article-callout">
+  <strong>Try it locally</strong>
+  <p>Use the <Link href="/tools/timestamp-converter">Unix Timestamp Converter</Link> to compare local time, UTC, ISO 8601, seconds, and milliseconds.</p>
+</aside>
+
+### Related tools
+
+- <Link href="/tools/timestamp-converter">Unix Timestamp Converter</Link>
+- <Link href="/tools/jwt-decoder">JWT Decoder</Link>
+- <Link href="/tools/json-formatter">JSON Formatter</Link>
+
+</article>

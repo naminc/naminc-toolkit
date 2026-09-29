@@ -1,0 +1,70 @@
+import Link from "next/link";
+
+export const metadata = {
+  title: "JWT Decoding vs. Verification",
+  description: "Understand why decoding a JWT is not verification, what signatures prove, and which claims applications should validate.",
+  alternates: { canonical: "/notes/jwt-decoding-vs-verification" },
+};
+
+<article className="container page-shell article-page">
+
+<header className="article-header">
+  <p className="eyebrow">Naminc notes · 6 min read</p>
+  <h1>JWT decoding is not JWT verification</h1>
+  <p>A JWT can look legitimate and still be forged. Reading its claims is useful for debugging; trusting them requires cryptographic verification.</p>
+</header>
+
+<nav className="article-toc" aria-label="On this page">
+  <strong>On this page</strong>
+  <a href="#structure">JWT structure</a>
+  <a href="#decoding">What decoding proves</a>
+  <a href="#verification">What verification checks</a>
+  <a href="#claims">Claims to validate</a>
+</nav>
+
+<h2 id="structure">The three-part structure</h2>
+
+A compact JSON Web Token usually contains three dot-separated values:
+
+```text
+base64url(header).base64url(payload).signature
+```
+
+The header describes details such as the signing algorithm. The payload contains claims. Both are Base64URL-encoded, which makes them readable but provides no secrecy. The signature is computed from the first two parts and a trusted key.
+
+<h2 id="decoding">What decoding proves</h2>
+
+Decoding proves only that the first two token parts can be interpreted as data. Anyone can create a header and payload containing an administrator role, a chosen user ID, or an expiration date far in the future.
+
+This means decoded claims are useful for inspection, but they must be treated as untrusted input until verification succeeds.
+
+<h2 id="verification">What verification checks</h2>
+
+Signature verification checks whether the signed token data matches a trusted secret or public key. A secure JWT library should also restrict acceptable algorithms. Applications should not simply accept whichever algorithm a token header requests.
+
+Verification belongs on the trusted side of an application, usually the server or an API gateway. A browser tool can decode a token without receiving keys, but it cannot establish that the token is authentic.
+
+<h2 id="claims">Claims still need validation</h2>
+
+A valid signature is necessary, but it is not the complete authorization decision. Depending on the system, verify these claims too:
+
+- `exp`: the token has not expired.
+- `nbf`: the token is active yet.
+- `iss`: the token came from the expected issuer.
+- `aud`: the token was issued for this application or API.
+- Application claims: roles and scopes permit the requested action.
+
+Clock skew may justify a small tolerance for time-based claims. Keep that allowance deliberate and bounded.
+
+<aside className="article-callout warning-callout">
+  <strong>Do not paste production credentials into random websites</strong>
+  <p>The <Link href="/tools/jwt-decoder">Naminc JWT Decoder</Link> runs locally in your browser. Even so, rotate any token you believe has been exposed elsewhere.</p>
+</aside>
+
+### Related tools
+
+- <Link href="/tools/jwt-decoder">JWT Decoder</Link>
+- <Link href="/tools/base64">Base64 Encoder & Decoder</Link>
+- <Link href="/tools/timestamp-converter">Unix Timestamp Converter</Link>
+
+</article>
