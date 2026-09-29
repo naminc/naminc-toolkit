@@ -1,5 +1,6 @@
 export const siteConfig = {
   name: "Naminc Tech Tools",
+  title: "Naminc Tech Tools | Developer Utilities at naminc.tech",
   shortName: "naminc.tech",
   description:
     "Fast, private developer tools and practical technical notes by Naminc.",
