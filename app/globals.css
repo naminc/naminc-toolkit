@@ -349,10 +349,12 @@ mark { border-radius: 1px; background: #e5d18c; color: #29230f; }
   .container { width: min(100% - 28px, 1160px); }
   .page-shell { padding-block: 38px 70px; }
   .site-header { background: var(--canvas); backdrop-filter: none; }
-  .header-inner { min-height: 58px; grid-template-columns: 1fr auto; }
+  .header-inner { min-height: 88px; grid-template-columns: 1fr auto; grid-template-rows: 48px 40px; }
   .main-nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; height: 40px; gap: 24px; border-top: 1px solid var(--line); }
   .main-nav a[aria-current="page"]::after { bottom: 0; }
-  .wordmark { font-size: 16px; }
+  .wordmark { font-size: 17px; }
+  .theme-toggle { font-size: 12px; }
+  .theme-symbol { width: 14px; height: 14px; }
   .home-page { padding-top: 46px; }
   .home-intro { margin-bottom: 38px; }
   .home-intro h1 { font-size: 39px; }
