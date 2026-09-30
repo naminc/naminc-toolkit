@@ -3,6 +3,8 @@ export type ToolCategory = "Data" | "Encoding" | "Security" | "Developer";
 export type ToolDefinition = {
   slug: string;
   name: string;
+  seoTitle?: string;
+  metaDescription?: string;
   shortDescription: string;
   description: string;
   category: ToolCategory;
@@ -14,9 +16,38 @@ export type ToolDefinition = {
   example: { input: string; output: string };
   faqs: { question: string; answer: string }[];
   sections?: { title: string; body: string }[];
+  privacyNote?: string;
 };
 
 export const tools: ToolDefinition[] = [
+  {
+    slug: "api-client",
+    name: "API Client",
+    seoTitle: "API Client & HTTP Request Tester",
+    metaDescription: "Send GET, POST, and other HTTP requests directly from your browser. Inspect API responses, import cURL, and generate request code without a proxy.",
+    shortDescription: "Send HTTP requests directly from your browser and inspect responses.",
+    description: "Build and send REST API requests from your browser, inspect status, headers, and bodies, then generate reusable request code.",
+    category: "Developer",
+    icon: "SendHorizontal",
+    keywords: ["API client", "HTTP request tester", "REST API tester", "browser fetch", "curl converter"],
+    relatedTools: ["json-formatter", "jwt-decoder", "url-encoder", "base64"],
+    popular: true,
+    privacyNote: "Direct browser request. Data is sent only to the target endpoint.",
+    howTo: ["Choose an HTTP method and enter an endpoint that permits browser requests.", "Add query parameters, headers, authorization, or a request body.", "Send the request, inspect the response, and copy or generate reusable code."],
+    example: { input: "GET https://jsonplaceholder.typicode.com/posts?userId=1", output: "HTTP status, response time, headers, and a formatted JSON body." },
+    sections: [
+      { title: "Browser mode", body: "Requests travel directly from your browser to the endpoint you enter. Naminc Tech Tools does not receive the URL, headers, credentials, request body, or response." },
+      { title: "How CORS affects requests", body: "Browsers enforce Cross-Origin Resource Sharing rules. The target server must allow your origin and requested headers, or the browser may block access to the response." },
+      { title: "Why curl may still work", body: "Command-line clients do not enforce browser CORS rules. A request can succeed in curl and fail here because of CORS, although DNS, TLS, connectivity, or endpoint availability can also cause network failures." },
+      { title: "Protect API credentials", body: "Use tokens only on a trusted device, confirm the destination URL before sending, and clear the workspace when finished. Reloading the page removes request data from memory." },
+    ],
+    faqs: [
+      { question: "Does Naminc Tech Tools receive my API request?", answer: "No. Browser mode uses Fetch API to connect directly from your browser to the target endpoint. There is no Naminc proxy in this tool." },
+      { question: "Why does the request work in curl but not here?", answer: "The target may not allow cross-origin browser requests. A network error can also come from DNS, TLS, connectivity, or an unavailable endpoint." },
+      { question: "Are authorization tokens saved?", answer: "No. Request URLs, headers, authorization values, and bodies remain in page memory and disappear when you reload or leave the page." },
+      { question: "Which cURL options can I import?", answer: "The importer supports common URL, method, header, data, Basic Auth, and Bearer header options. It rejects unsupported flags and never executes shell commands." },
+    ],
+  },
   {
     slug: "json-formatter",
     name: "JSON Formatter",

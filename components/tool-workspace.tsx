@@ -1,4 +1,5 @@
 import { Base64Tool } from "@/components/tools/base64-tool";
+import { ApiClientTool } from "@/components/tools/api-client-tool";
 import { HashTool } from "@/components/tools/hash-tool";
 import { JsonTool } from "@/components/tools/json-tool";
 import { JwtTool } from "@/components/tools/jwt-tool";
@@ -9,6 +10,7 @@ import { UrlTool } from "@/components/tools/url-tool";
 import { UuidTool } from "@/components/tools/uuid-tool";
 
 const workspaces: Record<string, React.ComponentType> = {
+  "api-client": ApiClientTool,
   "json-formatter": JsonTool,
   "jwt-decoder": JwtTool,
   "base64": Base64Tool,

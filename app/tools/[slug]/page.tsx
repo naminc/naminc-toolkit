@@ -13,7 +13,7 @@ export function generateStaticParams() { return tools.map((tool) => ({ slug: too
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params; const tool = toolMap.get(slug); if (!tool) return {};
-  const title = tool.name; const description = `${tool.shortDescription} Free, private, and processed entirely in your browser.`;
+  const title = tool.seoTitle ?? tool.name; const description = tool.metaDescription ?? `${tool.shortDescription} Free, private, and processed entirely in your browser.`;
   return { title, description, keywords: tool.keywords, alternates: { canonical: `/tools/${slug}` }, openGraph: { title: `${title} | ${siteConfig.name}`, description, url: `/tools/${slug}`, type: "website" }, twitter: { card: "summary", title, description } };
 }
 
@@ -29,7 +29,7 @@ export default async function ToolPage({ params }: Props) {
     <StructuredData data={schemas} />
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span aria-current="page">{tool.name}</span></nav>
     <header className="tool-header"><p className="tool-meta">{tool.category}</p><h1>{tool.name}</h1><p>{tool.description}</p></header>
-    <p className="local-note">Local processing. Your data stays in this browser.</p>
+    <p className="local-note">{tool.privacyNote ?? "Local processing. Your data stays in this browser."}</p>
     <ToolWorkspace slug={slug} />
     <div className="content-grid"><section><h2>How to use it</h2><ul className="steps">{tool.howTo.map((step) => <li key={step}>{step}</li>)}</ul></section><section><h2>Example</h2><div className="example-block"><span>Input</span><pre>{tool.example.input}</pre><span>Output</span><pre>{tool.example.output}</pre></div></section></div>
     {tool.sections && <section className="tool-explainer" aria-label={`About ${tool.name}`}>{tool.sections.map((section) => <div key={section.title}><h2>{section.title}</h2><p>{section.body}</p></div>)}</section>}

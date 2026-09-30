@@ -7,6 +7,7 @@ import {
   Link2,
   Regex,
   ShieldCheck,
+  SendHorizontal,
   TimerReset,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +21,7 @@ const icons: Record<string, LucideIcon> = {
   Link2,
   Regex,
   ShieldCheck,
+  SendHorizontal,
   TimerReset,
 };
 

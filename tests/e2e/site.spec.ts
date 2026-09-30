@@ -97,3 +97,114 @@ test.describe("TOTP generator", () => {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 });
+
+test.describe("API Client", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/api-client");
+  });
+
+  test("loads SEO metadata and sends a GET request with duplicate-safe params", async ({ page }) => {
+    await page.route("https://api.naminc.test/items?limit=2", async (route) => {
+      await route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "access-control-expose-headers": "x-request-id", "content-type": "application/json", "x-request-id": "req-47" }, body: JSON.stringify({ items: ["alpha", "beta"] }) });
+    });
+    await expect(page).toHaveTitle("API Client & HTTP Request Tester | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/api-client");
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/items");
+    await page.getByLabel("Parameter 1").fill("limit");
+    await page.getByLabel("Value 1").fill("2");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("200 OK")).toBeVisible();
+    await expect(page.locator(".api-response-content")).toContainText('"alpha"');
+    await page.getByRole("tab", { name: "Headers", exact: true }).last().click();
+    await expect(page.locator(".api-response-content")).toContainText("x-request-id: req-47");
+  });
+
+  test("sends POST JSON with headers and switches Pretty and Raw views", async ({ page }) => {
+    let postedBody = "";
+    let traceHeader = "";
+    await page.route("https://api.naminc.test/items?source=browser", async (route) => {
+      const request = route.request();
+      if (request.method() === "OPTIONS") {
+        await route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "POST", "access-control-allow-headers": "content-type,x-trace" } });
+        return;
+      }
+      postedBody = request.postData() ?? "";
+      traceHeader = request.headers()["x-trace"] ?? "";
+      await route.fulfill({ status: 201, headers: { "access-control-allow-origin": "*", "content-type": "application/json" }, body: '{"created":true}' });
+    });
+    await page.getByLabel("HTTP method").selectOption("POST");
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/items");
+    await page.getByLabel("Parameter 1").fill("source");
+    await page.getByLabel("Value 1").fill("browser");
+    await page.getByRole("tab", { name: "Headers", exact: true }).first().click();
+    await page.getByLabel("Header 1").fill("X-Trace");
+    await page.getByLabel("Value 1").fill("naminc-e2e");
+    await page.getByRole("tab", { name: "Body", exact: true }).first().click();
+    await page.getByRole("button", { name: "JSON", exact: true }).click();
+    await page.getByRole("textbox", { name: "Request body", exact: true }).fill('{"name":"Naminc"}');
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("201 Created")).toBeVisible();
+    expect(postedBody).toBe('{"name":"Naminc"}');
+    expect(traceHeader).toBe("naminc-e2e");
+    await expect(page.locator(".api-response-content")).toContainText('"created": true');
+    await page.getByRole("button", { name: "Raw", exact: true }).click();
+    await expect(page.locator(".api-response-content")).toHaveText('{"created":true}');
+  });
+
+  test("copies and downloads a response without rendering HTML", async ({ page }) => {
+    await page.route("https://api.naminc.test/html", async (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "text/html" }, body: "<script>window.__unsafe = true</script><h1>Text only</h1>" }));
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/html");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.locator(".api-response-content")).toContainText("<script>");
+    expect(await page.evaluate(() => (window as typeof window & { __unsafe?: boolean }).__unsafe)).toBeUndefined();
+    await page.getByRole("button", { name: "Copy response body" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("<h1>Text only</h1>");
+    await expect(page.getByRole("button", { name: "Download response body" })).toBeEnabled();
+  });
+
+  test("cancels requests and reports timeout separately", async ({ page }) => {
+    await page.route("https://api.naminc.test/slow", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*" }, body: "late" }).catch(() => undefined);
+    });
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/slow");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByText("Request canceled.")).toBeVisible();
+    await page.getByLabel("Request timeout in seconds").fill("1");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("Request timed out before the endpoint responded.")).toBeVisible({ timeout: 4000 });
+  });
+
+  test("imports cURL, generates code, and clears credentials from memory", async ({ page }) => {
+    await page.getByText("Import cURL", { exact: true }).click();
+    await page.getByLabel("cURL command").fill("curl -X POST 'https://api.naminc.test/items' -H 'Content-Type: application/json' -H 'Authorization: Bearer test-token' -d '{\"ok\":true}'");
+    await page.getByRole("button", { name: "Import request" }).click();
+    await expect(page.getByLabel("Endpoint URL")).toHaveValue("https://api.naminc.test/items");
+    await expect(page.getByLabel("HTTP method")).toHaveValue("POST");
+    await page.getByText("Generate code", { exact: true }).click();
+    await expect(page.locator(".api-code-output")).toContainText("test-token");
+    await page.getByRole("button", { name: "Node.js", exact: true }).click();
+    await expect(page.locator(".api-code-output")).toContainText("AbortController");
+    await page.getByRole("button", { name: "Clear" }).click();
+    await expect(page.getByLabel("Endpoint URL")).toHaveValue("");
+    await page.reload();
+    await expect(page.getByLabel("Endpoint URL")).toHaveValue("");
+    await expect(page.locator("body")).not.toContainText("test-token");
+  });
+
+  test("supports keyboard focus, themes, and mobile width without console errors", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel("Endpoint URL").focus();
+    await expect(page.getByLabel("Endpoint URL")).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(consoleErrors).toEqual([]);
+  });
+});
