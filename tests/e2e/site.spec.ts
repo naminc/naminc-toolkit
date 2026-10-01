@@ -152,6 +152,62 @@ test.describe("API Client", () => {
     await expect(page.locator(".api-response-content")).toHaveText('{"created":true}');
   });
 
+  test("switches to opt-in Proxy mode and displays a mocked proxy response", async ({ page }) => {
+    let proxyPayload: Record<string, unknown> = {};
+    await page.route("**/api/http-proxy", async (route) => {
+      proxyPayload = JSON.parse(route.request().postData() ?? "{}");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: { "content-type": "application/json", "x-proxy-test": "visible" },
+          contentType: "application/json",
+          body: '{"proxied":true}',
+          bodyEncoding: "text",
+          responseTimeMs: 47,
+          responseSize: 16,
+          redirects: [{ status: 302, url: "https://api.naminc.test/final" }],
+        }),
+      });
+    });
+    await expect(page.getByText("Requests are sent directly from your browser to the target endpoint. CORS rules apply.")).toBeVisible();
+    await page.getByRole("button", { name: "Proxy", exact: true }).click();
+    await expect(page.getByText("Proxy mode sends the request through Naminc infrastructure. Do not use production credentials unless you trust this service.")).toBeVisible();
+    await expect(page.getByText("Requests are sent directly from your browser to the target endpoint. CORS rules apply.")).toHaveCount(0);
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/data");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("200 OK")).toBeVisible();
+    await expect(page.locator(".api-response-content")).toContainText('"proxied": true');
+    await expect(page.getByText("1 redirect", { exact: true })).toBeVisible();
+    expect(proxyPayload).toMatchObject({ url: "https://api.naminc.test/data", method: "GET", body: null, timeoutMs: 15000 });
+  });
+
+  test("shows blocked, rate-limit, and timeout proxy errors without clearing the request", async ({ page }) => {
+    const errors = [
+      { status: 403, code: "BLOCKED_TARGET", message: "Blocked." },
+      { status: 429, code: "RATE_LIMITED", message: "Limited." },
+      { status: 504, code: "TIMEOUT", message: "Timed out." },
+    ];
+    let requestIndex = 0;
+    await page.route("**/api/http-proxy", async (route) => {
+      const current = errors[requestIndex];
+      requestIndex += 1;
+      await route.fulfill({ status: current.status, contentType: "application/json", body: JSON.stringify({ ok: false, error: { code: current.code, message: current.message } }) });
+    });
+    await page.getByRole("button", { name: "Proxy", exact: true }).click();
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/private-check");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("Target blocked")).toBeVisible();
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("Rate limit reached")).toBeVisible();
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("Request timed out")).toBeVisible();
+    await expect(page.getByLabel("Endpoint URL")).toHaveValue("https://api.naminc.test/private-check");
+  });
+
   test("copies and downloads a response without rendering HTML", async ({ page }) => {
     await page.route("https://api.naminc.test/html", async (route) => route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "content-type": "text/html" }, body: "<script>window.__unsafe = true</script><h1>Text only</h1>" }));
     await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/html");
@@ -201,6 +257,8 @@ test.describe("API Client", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByLabel("Endpoint URL").focus();
     await expect(page.getByLabel("Endpoint URL")).toBeFocused();
+    await page.getByRole("button", { name: "Proxy", exact: true }).click();
+    await expect(page.getByText("Proxy mode sends the request through Naminc infrastructure. Do not use production credentials unless you trust this service.", { exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.getByRole("button", { name: "Toggle color theme" }).click();
     await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");

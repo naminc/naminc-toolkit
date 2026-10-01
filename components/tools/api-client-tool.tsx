@@ -19,10 +19,12 @@ import {
   type KeyValueInput,
   type RequestDraft,
 } from "@/lib/api-client";
+import type { ProxyApiResponse, ProxyErrorCode, ProxySuccessResponse } from "@/lib/http-proxy-types";
 
 type UiRow = KeyValueInput & { id: number };
 type RequestTab = "params" | "headers" | "auth" | "body";
 type ResponseTab = "body" | "headers";
+type RequestMode = "browser" | "proxy";
 type ResponseResult = {
   status: number;
   statusText: string;
@@ -32,10 +34,23 @@ type ResponseResult = {
   headers: string;
   raw: string;
   pretty: string;
+  bodyEncoding: "text" | "base64";
+  redirects: number;
 };
 
 const methods: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+const proxyErrorMessages: Partial<Record<ProxyErrorCode, string>> = {
+  BLOCKED_TARGET: "This target is blocked by proxy network security rules.",
+  CLIENT_ABORTED: "The proxy request was canceled.",
+  DNS_FAILURE: "The proxy could not resolve the target hostname.",
+  RATE_LIMITED: "Proxy rate limit exceeded. Wait for the retry window and try again.",
+  RATE_LIMIT_UNAVAILABLE: "Proxy mode is unavailable because its shared rate limiter is not configured or reachable.",
+  REDIRECT_LIMIT: "The target exceeded the proxy redirect limit.",
+  REQUEST_TOO_LARGE: "The request exceeds the proxy 1 MB body limit.",
+  RESPONSE_TOO_LARGE: "The response exceeds the proxy 2 MB limit.",
+  TIMEOUT: "The target did not respond before the proxy timeout.",
+};
 let rowSequence = 10;
 
 function row(key = "", value = ""): UiRow {
@@ -63,6 +78,7 @@ function KeyValueEditor({ rows, onChange, keyLabel, valueLabel }: { rows: UiRow[
 }
 
 export function ApiClientTool() {
+  const [requestMode, setRequestMode] = useState<RequestMode>("browser");
   const [method, setMethod] = useState<HttpMethod>("GET");
   const [url, setUrl] = useState("");
   const [params, setParams] = useState<UiRow[]>([{ id: 1, key: "", value: "" }]);
@@ -77,6 +93,7 @@ export function ApiClientTool() {
   const [viewMode, setViewMode] = useState<"pretty" | "raw">("pretty");
   const [result, setResult] = useState<ResponseResult | null>(null);
   const [error, setError] = useState("");
+  const [errorTitle, setErrorTitle] = useState("Request failed");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
   const [curlInput, setCurlInput] = useState("");
@@ -92,7 +109,24 @@ export function ApiClientTool() {
 
   function resetFeedback() {
     setError("");
+    setErrorTitle("Request failed");
     setNotice("");
+  }
+
+  function proxyResult(result: ProxySuccessResponse): ResponseResult {
+    const raw = result.body;
+    return {
+      status: result.status,
+      statusText: result.statusText,
+      duration: result.responseTimeMs,
+      bytes: result.responseSize,
+      contentType: result.contentType,
+      headers: formatResponseHeaders(new Headers(result.headers)),
+      raw,
+      pretty: result.bodyEncoding === "text" ? formatResponseBody(raw) : raw,
+      bodyEncoding: result.bodyEncoding,
+      redirects: result.redirects.length,
+    };
   }
 
   async function sendRequest() {
@@ -105,24 +139,43 @@ export function ApiClientTool() {
     canceledRef.current = false;
     setLoading(true);
     let timedOut = false;
-    const timeout = window.setTimeout(() => { timedOut = true; controller.abort(); }, prepared.timeoutMs);
+    const timeout = window.setTimeout(() => { timedOut = true; controller.abort(); }, prepared.timeoutMs + (requestMode === "proxy" ? 2_000 : 0));
     const started = performance.now();
     try {
-      const response = await fetch(prepared.url, { method: prepared.method, headers: prepared.headers, body: prepared.body, signal: controller.signal });
-      const responseBody = await readResponseBody(response, MAX_RESPONSE_BYTES);
-      const duration = Math.round(performance.now() - started);
-      setResult({
-        status: response.status,
-        statusText: response.statusText,
-        duration,
-        bytes: responseBody.bytes,
-        contentType: response.headers.get("content-type") ?? "Not exposed",
-        headers: formatResponseHeaders(response.headers),
-        raw: responseBody.text,
-        pretty: formatResponseBody(responseBody.text),
-      });
+      if (requestMode === "proxy") {
+        const response = await fetch("/api/http-proxy", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url: prepared.url, method: prepared.method, headers: prepared.headers, body: prepared.body ?? null, timeoutMs: prepared.timeoutMs }),
+          signal: controller.signal,
+        });
+        const data = await response.json() as ProxyApiResponse;
+        if (!data.ok) {
+          setErrorTitle(data.error.code === "RATE_LIMITED" ? "Rate limit reached" : data.error.code === "BLOCKED_TARGET" ? "Target blocked" : data.error.code === "TIMEOUT" ? "Request timed out" : "Proxy request failed");
+          setError(proxyErrorMessages[data.error.code] ?? data.error.message);
+          return;
+        }
+        setResult(proxyResult(data));
+        setNotice(`Proxy request completed with HTTP ${data.status}.`);
+      } else {
+        const response = await fetch(prepared.url, { method: prepared.method, headers: prepared.headers, body: prepared.body, signal: controller.signal });
+        const responseBody = await readResponseBody(response, MAX_RESPONSE_BYTES);
+        const duration = Math.round(performance.now() - started);
+        setResult({
+          status: response.status,
+          statusText: response.statusText,
+          duration,
+          bytes: responseBody.bytes,
+          contentType: response.headers.get("content-type") ?? "Not exposed",
+          headers: formatResponseHeaders(response.headers),
+          raw: responseBody.text,
+          pretty: formatResponseBody(responseBody.text),
+          bodyEncoding: "text",
+          redirects: 0,
+        });
+        setNotice(`Request completed with HTTP ${response.status}.`);
+      }
       setResponseTab("body");
-      setNotice(`Request completed with HTTP ${response.status}.`);
     } catch (caught) {
       setError(classifyRequestError(caught, timedOut && !canceledRef.current));
     } finally {
@@ -142,6 +195,13 @@ export function ApiClientTool() {
     setMethod("GET"); setUrl(""); setParams([row()]); setHeaders([row()]); setAuth({ mode: "none" });
     setBodyMode("none"); setBody(""); setForm([row()]); setTimeoutSeconds(15); setResult(null); setError("");
     setNotice("Cleared request data and credentials from this page."); setCurlInput(""); setCopied(null);
+  }
+
+  function changeMode(mode: RequestMode) {
+    cancelRequest();
+    setRequestMode(mode);
+    setResult(null);
+    resetFeedback();
   }
 
   function useExample() {
@@ -171,7 +231,10 @@ export function ApiClientTool() {
 
   function downloadResponse() {
     if (!result?.raw) return;
-    const objectUrl = URL.createObjectURL(new Blob([result.raw], { type: result.contentType === "Not exposed" ? "text/plain" : result.contentType }));
+    const content = result.bodyEncoding === "base64"
+      ? Uint8Array.from(atob(result.raw), (character) => character.charCodeAt(0))
+      : result.raw;
+    const objectUrl = URL.createObjectURL(new Blob([content], { type: result.contentType === "Not exposed" ? "text/plain" : result.contentType }));
     const anchor = document.createElement("a"); anchor.href = objectUrl; anchor.download = result.contentType.includes("json") ? "response.json" : "response.txt"; anchor.click(); URL.revokeObjectURL(objectUrl);
   }
 
@@ -179,6 +242,10 @@ export function ApiClientTool() {
   const displayedBody = result ? (viewMode === "pretty" ? result.pretty : result.raw) : "";
 
   return <div className="workspace api-workspace">
+    <div className="api-mode-bar">
+      <SegmentedControl label="Request mode" value={requestMode} onChange={changeMode} options={[{ value: "browser", label: "Browser" }, { value: "proxy", label: "Proxy" }]} />
+      <span>{requestMode === "browser" ? "Direct request. CORS applies." : "Vercel proxy. Public targets only."}</span>
+    </div>
     <div className="api-address-bar">
       <label className="sr-only" htmlFor="api-method">HTTP method</label>
       <select id="api-method" aria-label="HTTP method" value={method} onChange={(event) => { const next = event.target.value as HttpMethod; setMethod(next); if (next === "GET" || next === "HEAD") setBodyMode("none"); resetFeedback(); }}>{methods.map((item) => <option key={item}>{item}</option>)}</select>
@@ -199,7 +266,7 @@ export function ApiClientTool() {
             <label className="api-field"><span>Authorization type</span><select aria-label="Authorization type" value={auth.mode} onChange={(event) => setAuth({ mode: event.target.value as AuthInput["mode"] })}><option value="none">None</option><option value="bearer">Bearer Token</option><option value="basic">Basic Auth</option></select></label>
             {auth.mode === "bearer" && <label className="api-field"><span>Bearer token</span><input aria-label="Bearer token" type="password" value={auth.token ?? ""} onChange={(event) => setAuth({ mode: "bearer", token: event.target.value })} autoComplete="off" /></label>}
             {auth.mode === "basic" && <><label className="api-field"><span>Username</span><input aria-label="Basic Auth username" value={auth.username ?? ""} onChange={(event) => setAuth((current) => ({ ...current, username: event.target.value }))} autoComplete="off" /></label><label className="api-field"><span>Password</span><input aria-label="Basic Auth password" type="password" value={auth.password ?? ""} onChange={(event) => setAuth((current) => ({ ...current, password: event.target.value }))} autoComplete="off" /></label></>}
-            <p>Authorization values stay in this page&apos;s memory and are sent only to the target endpoint.</p>
+            <p>{requestMode === "browser" ? "Authorization values stay in page memory and are sent directly to the target endpoint." : "Authorization values stay in page memory, pass through Naminc infrastructure, and are forwarded to the target."}</p>
           </div>}
           {requestTab === "body" && <div className="api-body-panel">
             {bodyDisabled ? <div className="api-panel-empty">{method} requests do not include a request body.</div> : <>
@@ -208,26 +275,28 @@ export function ApiClientTool() {
             </>}
           </div>}
         </div>
-        <div className="api-request-settings"><label>Timeout<input aria-label="Request timeout in seconds" type="number" min={1} max={120} value={timeoutSeconds} onChange={(event) => setTimeoutSeconds(Number(event.target.value))} /><span>seconds</span></label><span>Response limit: 2 MB</span></div>
+        <div className="api-request-settings"><label>Timeout<input aria-label="Request timeout in seconds" type="number" min={1} max={15} value={timeoutSeconds} onChange={(event) => setTimeoutSeconds(Number(event.target.value))} /><span>seconds</span></label><span>{requestMode === "proxy" ? "Request: 1 MB / Response: 2 MB" : "Response limit: 2 MB"}</span></div>
       </section>
 
       <section className="api-response" aria-label="Response viewer" aria-busy={loading}>
         <div className="api-response-head">
           <div className="api-tabs" role="tablist" aria-label="Response sections"><button type="button" role="tab" aria-selected={responseTab === "body"} className={responseTab === "body" ? "active" : ""} onClick={() => setResponseTab("body")}>Body</button><button type="button" role="tab" aria-selected={responseTab === "headers"} className={responseTab === "headers" ? "active" : ""} onClick={() => setResponseTab("headers")}>Headers</button></div>
-          {result && <div className="api-response-metrics"><strong className={result.status >= 400 ? "error" : ""}>{result.status} {result.statusText}</strong><span>{result.duration} ms</span><span>{formatBytes(result.bytes)}</span></div>}
+          {result && <div className="api-response-metrics"><strong className={result.status >= 400 ? "error" : ""}>{result.status} {result.statusText}</strong><span>{result.duration} ms</span><span>{formatBytes(result.bytes)}</span>{result.redirects > 0 && <span>{result.redirects} redirect{result.redirects === 1 ? "" : "s"}</span>}</div>}
         </div>
-        {loading ? <div className="api-loading" role="status"><span>Sending request</span><i /><i /><i /></div> : error ? <div className="api-response-error" role="alert"><strong>Request failed</strong><p>{error}</p></div> : !result ? <div className="api-response-empty"><strong>No response yet</strong><p>Configure the request and select Send. Browser CORS rules apply.</p></div> : <>
+        {loading ? <div className="api-loading" role="status"><span>Sending request</span><i /><i /><i /></div> : error ? <div className="api-response-error" role="alert"><strong>{errorTitle}</strong><p>{error}</p></div> : !result ? <div className="api-response-empty"><strong>No response yet</strong><p>{requestMode === "browser" ? "Configure the request and select Send. Browser CORS rules apply." : "Configure the request and select Send. Private network targets are blocked."}</p></div> : <>
           <div className="api-response-toolbar">
             {responseTab === "body" ? <SegmentedControl label="Response body view" value={viewMode} onChange={setViewMode} options={[{ value: "pretty", label: "Pretty" }, { value: "raw", label: "Raw" }]} /> : <span>{result.contentType}</span>}
             <div className="button-row">{responseTab === "body" && <IconAction label="Download response body" onClick={downloadResponse}><Download size={15} /></IconAction>}<IconAction label={`Copy response ${responseTab}`} onClick={() => void copy(responseTab === "body" ? displayedBody : result.headers, responseTab)}>{copied === responseTab ? <Check size={15} /> : <Clipboard size={15} />}</IconAction></div>
           </div>
-          <pre className="api-response-content">{responseTab === "body" ? displayedBody || "This response has no body." : result.headers || "No response headers are exposed."}</pre>
+          <pre className="api-response-content">{responseTab === "body" ? (result.bodyEncoding === "base64" && displayedBody ? `Base64 encoded binary response:\n${displayedBody}` : displayedBody || "This response has no body.") : result.headers || "No response headers are exposed."}</pre>
         </>}
       </section>
     </div>
 
     {notice && !error && <Status type="success">{notice}</Status>}
-    <Status type="info">Requests are sent directly from your browser to the target endpoint. CORS rules apply.</Status>
+    {requestMode === "browser"
+      ? <Status type="info">Requests are sent directly from your browser to the target endpoint. CORS rules apply.</Status>
+      : <Status type="info">Proxy mode sends the request through Naminc infrastructure. Do not use production credentials unless you trust this service.</Status>}
 
     <div className="api-utilities">
       <details><summary>Import cURL</summary><div className="api-utility-content"><label className="api-body-editor"><span>cURL command</span><textarea aria-label="cURL command" value={curlInput} onChange={(event) => setCurlInput(event.target.value)} placeholder="curl -X POST https://api.example.com -H 'Content-Type: application/json' -d '{&quot;ok&quot;:true}'" spellCheck={false} /></label><p>Supports URL, method, headers, data, Basic Auth, and Bearer headers. Shell commands are parsed as text and never executed.</p><ActionButton onClick={importCurl}>Import request</ActionButton></div></details>

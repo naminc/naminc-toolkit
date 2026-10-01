@@ -29,7 +29,7 @@ export default async function ToolPage({ params }: Props) {
     <StructuredData data={schemas} />
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/tools">Tools</Link><span>/</span><span aria-current="page">{tool.name}</span></nav>
     <header className="tool-header"><p className="tool-meta">{tool.category}</p><h1>{tool.name}</h1><p>{tool.description}</p></header>
-    <p className="local-note">{tool.privacyNote ?? "Local processing. Your data stays in this browser."}</p>
+    {slug !== "api-client" && <p className="local-note">{tool.privacyNote ?? "Local processing. Your data stays in this browser."}</p>}
     <ToolWorkspace slug={slug} />
     <div className="content-grid"><section><h2>How to use it</h2><ul className="steps">{tool.howTo.map((step) => <li key={step}>{step}</li>)}</ul></section><section><h2>Example</h2><div className="example-block"><span>Input</span><pre>{tool.example.input}</pre><span>Output</span><pre>{tool.example.output}</pre></div></section></div>
     {tool.sections && <section className="tool-explainer" aria-label={`About ${tool.name}`}>{tool.sections.map((section) => <div key={section.title}><h2>{section.title}</h2><p>{section.body}</p></div>)}</section>}

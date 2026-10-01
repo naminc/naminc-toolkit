@@ -1,6 +1,6 @@
 # Naminc Tech Tools
 
-Free, focused developer utilities that process data locally in the browser.
+Free, focused developer utilities with local-first processing and explicit network boundaries.
 
 **Live site:** [naminc.tech](https://naminc.tech)
 
@@ -10,7 +10,7 @@ Naminc Tech Tools is a collection of practical tools for developers and IT profe
 
 | Category | Tool | What it does |
 | --- | --- | --- |
-| Developer | [API Client](https://naminc.tech/tools/api-client) | Send browser HTTP requests, inspect responses, and generate request code. |
+| Developer | [API Client](https://naminc.tech/tools/api-client) | Send direct browser requests or use the protected opt-in HTTP proxy. |
 | Data | [JSON Formatter](https://naminc.tech/tools/json-formatter) | Format, minify, validate, upload, and download JSON. |
 | Security | [JWT Decoder](https://naminc.tech/tools/jwt-decoder) | Inspect JWT headers, claims, and readable time fields without verifying the signature. |
 | Security | [TOTP Generator](https://naminc.tech/tools/totp-generator) | Generate RFC 6238 authenticator codes from Base32 secrets or `otpauth://` URIs. |
@@ -62,7 +62,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-No environment variables are required for local development.
+Local development uses an in-memory proxy rate limiter. Production fails closed until durable rate limiting is configured.
+
+### Proxy mode environment
+
+Copy the variable names from `.env.example` into Vercel Project Settings. Do not commit real values.
+
+| Variable | Purpose |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL` | REST URL for the shared Upstash Redis database. |
+| `UPSTASH_REDIS_REST_TOKEN` | Server-only token for the Upstash Redis database. |
+| `PROXY_RATE_LIMIT_SALT` | Long random secret used to HMAC client IPs before rate-limit storage. |
+
+Proxy mode allows 20 requests per minute for each hashed client IP. It returns `503` in production if Redis or the salt is unavailable. Browser mode continues to work without these variables.
 
 ## Scripts
 
@@ -97,6 +109,7 @@ npm run build
 
 ```text
 app/
+  api/http-proxy/        Node.js Route Handler for protected Proxy mode
   notes/                 MDX technical notes and notes index
   tools/[slug]/          Shared statically generated tool route
   layout.tsx             Global metadata, navigation, and WebSite schema
@@ -111,6 +124,8 @@ lib/
   tools.ts               Central tool registry and SEO content
   tool-utils.ts          Shared conversion logic
   api-client.ts          Browser HTTP request, cURL, and code generation logic
+  http-proxy-types.ts    Shared proxy request and response contracts
+  server/                SSRF validation, pinned transport, rate limiting, and handler
   totp.ts                Base32, otpauth, and RFC 6238 implementation
 tests/
   unit/                  Vitest conversion and RFC test vectors
@@ -169,6 +184,15 @@ The project can be deployed without a `vercel.json` file. Vercel detects Next.js
 3. Keep the default install and build commands.
 4. Deploy the project.
 5. Add `naminc.tech` under **Project Settings > Domains** and configure the requested DNS records.
+6. Create an Upstash Redis database and configure the three Proxy mode variables listed above.
+
+### Proxy security model
+
+Proxy mode is opt-in. It accepts only HTTP and HTTPS on ports 80 and 443, rejects URL credentials and obfuscated hosts, resolves and validates every DNS answer, and pins each connection to a validated public IP. Redirects are processed manually and validated again, with a maximum of three hops. Private, loopback, link-local, multicast, reserved, IPv4-mapped private, and cloud metadata addresses are blocked.
+
+Request bodies are limited to 1 MB and responses to 2 MB. The route limits header count and bytes, strips hop-by-hop and forwarding headers, never forwards cookies, never returns `Set-Cookie`, caps execution at 15 seconds, and aborts the upstream socket when the client request is canceled. Authorization may be forwarded to the target but is removed on cross-origin redirects.
+
+The application does not intentionally log target URLs, headers, credentials, or bodies. Vercel, Upstash, network providers, and target APIs may process operational metadata under their own policies.
 
 ### Vercel CLI
 
