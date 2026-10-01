@@ -1,5 +1,6 @@
 import { Base64Tool } from "@/components/tools/base64-tool";
 import { ApiClientTool } from "@/components/tools/api-client-tool";
+import { ColorConverterTool } from "@/components/tools/color-converter-tool";
 import { HashTool } from "@/components/tools/hash-tool";
 import { JsonTool } from "@/components/tools/json-tool";
 import { JwtTool } from "@/components/tools/jwt-tool";
@@ -11,6 +12,7 @@ import { UuidTool } from "@/components/tools/uuid-tool";
 
 const workspaces: Record<string, React.ComponentType> = {
   "api-client": ApiClientTool,
+  "color-converter": ColorConverterTool,
   "json-formatter": JsonTool,
   "jwt-decoder": JwtTool,
   "base64": Base64Tool,

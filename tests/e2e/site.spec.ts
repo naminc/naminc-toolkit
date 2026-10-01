@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 test("home lists and filters tools", async ({ page }) => {
   await page.goto("/");
@@ -279,6 +280,77 @@ test.describe("API Client", () => {
     await page.getByRole("button", { name: "Proxy", exact: true }).click();
     await expect(page.getByText("Proxy mode sends the request through Naminc infrastructure. Do not use production credentials unless you trust this service.", { exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(consoleErrors).toEqual([]);
+  });
+});
+
+test.describe("Color Converter", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/color-converter");
+  });
+
+  test("loads metadata and converts typed color formats", async ({ page }) => {
+    await expect(page).toHaveTitle("Color Converter & Picker | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/color-converter");
+    const input = page.getByLabel("Color value");
+    await input.fill("#0099ff80");
+    await input.press("Enter");
+    await expect(page.locator(".color-value-row", { hasText: "RGB" })).toContainText("rgba(0, 153, 255, 0.502)");
+    await expect(page.locator(".color-value-row", { hasText: "HSL" })).toContainText("hsla(204, 100%, 50%, 0.502)");
+
+    await input.fill("rgb(255 0 0 / 25%)");
+    await input.press("Enter");
+    await expect(page.locator(".color-value-row", { hasText: "HEX with alpha" })).toContainText("#FF000040");
+    await input.fill("rgb(300, 0, 0)");
+    await expect(page.locator(".color-inline-error")).toContainText("Red must be between 0 and 255");
+  });
+
+  test("updates controls, copies output, checks contrast, and swaps colors", async ({ page }) => {
+    await page.getByLabel("Native color picker").fill("#000000");
+    await page.getByLabel("Alpha value").fill("50");
+    await page.getByLabel("Alpha value").blur();
+    await expect(page.locator(".color-value-row", { hasText: "HEX with alpha" })).toContainText("#00000080");
+    await page.getByRole("button", { name: "Copy HEX with alpha" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("#00000080");
+
+    await page.getByLabel("Contrast background").fill("#FFFFFF");
+    await expect(page.locator(".contrast-score strong")).toContainText(":1");
+    await expect(page.getByText("AA large", { exact: true }).locator(".." )).toContainText("Pass");
+    await page.getByRole("button", { name: "Swap foreground and background" }).click();
+    await expect(page.getByLabel("Contrast foreground")).toHaveValue("#FFFFFFFF");
+  });
+
+  test("samples a local image, keeps session history, and clears transient data", async ({ page }) => {
+    const fixture = readFileSync(new URL("../fixtures/red-pixel.png.base64", import.meta.url), "utf8").trim();
+    await page.getByRole("button", { name: "Pick from image" }).click();
+    await page.getByLabel("Upload image").setInputFiles({ name: "red.png", mimeType: "image/png", buffer: Buffer.from(fixture, "base64") });
+    const canvas = page.getByLabel(/Image color sampling canvas/);
+    await expect(canvas).toBeVisible();
+    await canvas.click({ position: { x: 1, y: 1 } });
+    await expect(page.getByText("#FF0000FF", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select #FF0000FF" })).toBeVisible();
+    await canvas.press("ArrowRight");
+    await expect(page.getByLabel("Image X coordinate")).toHaveValue("1");
+    await page.getByRole("button", { name: "Remove image" }).click();
+    await expect(canvas).toBeHidden();
+
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(page.getByText("No colors selected in this session.")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("No colors selected in this session.")).toBeVisible();
+    await expect(page.getByLabel("Color value")).toHaveValue("#426A9E");
+  });
+
+  test("supports keyboard focus, mobile width, and dark theme without console errors", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel("Color value").focus();
+    await expect(page.getByLabel("Color value")).toBeFocused();
     await page.getByRole("button", { name: "Toggle color theme" }).click();
     await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);

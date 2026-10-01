@@ -21,6 +21,34 @@ export type ToolDefinition = {
 
 export const tools: ToolDefinition[] = [
   {
+    slug: "color-converter",
+    name: "Color Converter",
+    seoTitle: "Color Converter & Picker",
+    metaDescription: "Convert HEX, RGB, HSL, and OKLCH colors, check WCAG contrast, or pick a color from an image directly in your browser.",
+    shortDescription: "Convert color formats, check contrast, and pick colors from images.",
+    description: "Convert HEX, RGB, HSL, and OKLCH values, inspect alpha and WCAG contrast, or sample a color from a local image.",
+    category: "Developer",
+    icon: "Palette",
+    keywords: ["color converter", "color picker", "HEX to RGB", "RGB to HEX", "HSL converter", "OKLCH converter", "image color picker", "WCAG contrast checker"],
+    relatedTools: ["base64", "json-formatter", "url-encoder"],
+    popular: true,
+    privacyNote: "Colors and images are processed locally in your browser.",
+    howTo: ["Enter a HEX, RGB, HSL, or OKLCH value, or adjust the color controls.", "Copy a converted CSS value or compare the foreground and background contrast.", "Switch to Pick from image to upload, paste, or drop an image and sample a pixel."],
+    example: { input: "#0099FFB8", output: "rgba(0, 153, 255, 0.722), hsla(204, 100%, 50%, 0.722), and an OKLCH equivalent." },
+    sections: [
+      { title: "Convert color formats", body: "HEX is compact, RGB maps directly to screen channels, HSL expresses hue and lightness, and OKLCH is designed around perceptual lightness. Converted values may contain small rounding differences." },
+      { title: "Pick a color from an image", body: "Upload, drop, or paste a local PNG, JPEG, WebP, or GIF, then select a pixel. Large images are scaled to a bounded working canvas before sampling and never leave the browser." },
+      { title: "Alpha transparency", body: "Alpha controls opacity from fully transparent to fully opaque. The visible result depends on the surface beneath the color, so HEX8, RGBA, HSLA, and OKLCH alpha outputs preserve that value." },
+      { title: "Contrast ratio", body: "The checker calculates WCAG contrast after compositing transparent colors. Passing a contrast threshold helps with text readability, but it does not establish complete accessibility compliance." },
+    ],
+    faqs: [
+      { question: "Does the image color picker upload my image?", answer: "No. The browser decodes the selected file into a bounded local canvas. The image and sampled colors are not sent to Naminc infrastructure or saved after reload." },
+      { question: "Why can converted values differ slightly?", answer: "RGB uses integer channels while HSL and OKLCH use floating point values. Formatting and out-of-gamut channel clipping can introduce small rounding differences." },
+      { question: "What is the difference between RGB, HSL, and OKLCH?", answer: "RGB describes display channels, HSL rearranges RGB into hue, saturation, and lightness controls, and OKLCH offers a more perceptually consistent lightness and chroma model." },
+      { question: "Does a passing contrast ratio make a design accessible?", answer: "No. Contrast is one requirement. Typography, interaction states, semantics, keyboard access, motion, and content also affect accessibility." },
+    ],
+  },
+  {
     slug: "api-client",
     name: "API Client",
     seoTitle: "API Client & HTTP Request Tester",

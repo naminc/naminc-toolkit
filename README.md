@@ -11,6 +11,7 @@ Naminc Tech Tools is a collection of practical tools for developers and IT profe
 | Category | Tool | What it does |
 | --- | --- | --- |
 | Developer | [API Client](https://naminc.tech/tools/api-client) | Send direct browser requests or use the protected opt-in HTTP proxy. |
+| Developer | [Color Converter](https://naminc.tech/tools/color-converter) | Convert HEX, RGB, HSL, and OKLCH, check contrast, or sample a local image. |
 | Data | [JSON Formatter](https://naminc.tech/tools/json-formatter) | Format, minify, validate, upload, and download JSON. |
 | Security | [JWT Decoder](https://naminc.tech/tools/jwt-decoder) | Inspect JWT headers, claims, and readable time fields without verifying the signature. |
 | Security | [TOTP Generator](https://naminc.tech/tools/totp-generator) | Generate RFC 6238 authenticator codes from Base32 secrets or `otpauth://` URIs. |
