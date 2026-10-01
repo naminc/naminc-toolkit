@@ -321,6 +321,8 @@ mark { border-radius: 1px; background: #e5d18c; color: #29230f; }
 .api-response-empty p, .api-response-error p { max-width: 36ch; margin: 6px 0 0; color: var(--ink-tertiary); font-size: 11px; }
 .api-response-error { background: var(--danger-soft); color: var(--danger); }
 .api-response-error p { color: var(--danger); }
+.api-proxy-suggestion { display: grid; justify-items: center; max-width: 42ch; margin-top: 16px; padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--danger) 24%, transparent); }
+.api-proxy-suggestion p { margin: 0 0 10px; }
 .api-loading { grid-template-columns: repeat(3, 1fr); align-content: center; gap: 9px; }
 .api-loading span { grid-column: 1 / -1; margin-bottom: 8px; color: var(--ink-secondary); font-size: 11px; }
 .api-loading i { width: 58px; height: 7px; background: var(--surface-active); }

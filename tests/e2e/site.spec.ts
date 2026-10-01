@@ -185,6 +185,25 @@ test.describe("API Client", () => {
     expect(proxyPayload).toMatchObject({ url: "https://api.naminc.test/data", method: "GET", body: null, timeoutMs: 15000 });
   });
 
+  test("suggests Proxy mode after a Browser network failure without resending", async ({ page }) => {
+    let proxyRequests = 0;
+    await page.route("https://api.naminc.test/cors-blocked", async (route) => route.abort("failed"));
+    await page.route("**/api/http-proxy", async (route) => {
+      proxyRequests += 1;
+      await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+    });
+
+    await page.getByLabel("Endpoint URL").fill("https://api.naminc.test/cors-blocked");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText("If the target does not allow browser CORS, you can try Proxy mode.", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Switch to Proxy" }).click();
+
+    await expect(page.getByRole("button", { name: "Proxy", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Endpoint URL")).toHaveValue("https://api.naminc.test/cors-blocked");
+    await expect(page.getByText("Proxy mode sends the request through Naminc infrastructure. Do not use production credentials unless you trust this service.")).toBeVisible();
+    expect(proxyRequests).toBe(0);
+  });
+
   test("shows blocked, rate-limit, and timeout proxy errors without clearing the request", async ({ page }) => {
     const errors = [
       { status: 403, code: "BLOCKED_TARGET", message: "Blocked." },

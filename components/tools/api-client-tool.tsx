@@ -94,6 +94,7 @@ export function ApiClientTool() {
   const [result, setResult] = useState<ResponseResult | null>(null);
   const [error, setError] = useState("");
   const [errorTitle, setErrorTitle] = useState("Request failed");
+  const [showProxySuggestion, setShowProxySuggestion] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState("");
   const [curlInput, setCurlInput] = useState("");
@@ -110,6 +111,7 @@ export function ApiClientTool() {
   function resetFeedback() {
     setError("");
     setErrorTitle("Request failed");
+    setShowProxySuggestion(false);
     setNotice("");
   }
 
@@ -178,6 +180,7 @@ export function ApiClientTool() {
       setResponseTab("body");
     } catch (caught) {
       setError(classifyRequestError(caught, timedOut && !canceledRef.current));
+      setShowProxySuggestion(requestMode === "browser" && caught instanceof TypeError && !timedOut && !canceledRef.current);
     } finally {
       window.clearTimeout(timeout);
       controllerRef.current = null;
@@ -283,7 +286,7 @@ export function ApiClientTool() {
           <div className="api-tabs" role="tablist" aria-label="Response sections"><button type="button" role="tab" aria-selected={responseTab === "body"} className={responseTab === "body" ? "active" : ""} onClick={() => setResponseTab("body")}>Body</button><button type="button" role="tab" aria-selected={responseTab === "headers"} className={responseTab === "headers" ? "active" : ""} onClick={() => setResponseTab("headers")}>Headers</button></div>
           {result && <div className="api-response-metrics"><strong className={result.status >= 400 ? "error" : ""}>{result.status} {result.statusText}</strong><span>{result.duration} ms</span><span>{formatBytes(result.bytes)}</span>{result.redirects > 0 && <span>{result.redirects} redirect{result.redirects === 1 ? "" : "s"}</span>}</div>}
         </div>
-        {loading ? <div className="api-loading" role="status"><span>Sending request</span><i /><i /><i /></div> : error ? <div className="api-response-error" role="alert"><strong>{errorTitle}</strong><p>{error}</p></div> : !result ? <div className="api-response-empty"><strong>No response yet</strong><p>{requestMode === "browser" ? "Configure the request and select Send. Browser CORS rules apply." : "Configure the request and select Send. Private network targets are blocked."}</p></div> : <>
+        {loading ? <div className="api-loading" role="status"><span>Sending request</span><i /><i /><i /></div> : error ? <div className="api-response-error" role="alert"><strong>{errorTitle}</strong><p>{error}</p>{showProxySuggestion && <div className="api-proxy-suggestion"><p>If the target does not allow browser CORS, you can try Proxy mode. The request will pass through Naminc infrastructure and will not be sent automatically.</p><ActionButton onClick={() => changeMode("proxy")}>Switch to Proxy</ActionButton></div>}</div> : !result ? <div className="api-response-empty"><strong>No response yet</strong><p>{requestMode === "browser" ? "Configure the request and select Send. Browser CORS rules apply." : "Configure the request and select Send. Private network targets are blocked."}</p></div> : <>
           <div className="api-response-toolbar">
             {responseTab === "body" ? <SegmentedControl label="Response body view" value={viewMode} onChange={setViewMode} options={[{ value: "pretty", label: "Pretty" }, { value: "raw", label: "Raw" }]} /> : <span>{result.contentType}</span>}
             <div className="button-row">{responseTab === "body" && <IconAction label="Download response body" onClick={downloadResponse}><Download size={15} /></IconAction>}<IconAction label={`Copy response ${responseTab}`} onClick={() => void copy(responseTab === "body" ? displayedBody : result.headers, responseTab)}>{copied === responseTab ? <Check size={15} /> : <Clipboard size={15} />}</IconAction></div>
