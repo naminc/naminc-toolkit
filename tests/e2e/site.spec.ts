@@ -357,3 +357,93 @@ test.describe("Color Converter", () => {
     expect(consoleErrors).toEqual([]);
   });
 });
+
+test.describe("YAML and JSON Converter", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/yaml-json-converter");
+  });
+
+  test("loads metadata and auto converts YAML including multiple documents", async ({ page }) => {
+    await expect(page).toHaveTitle("YAML to JSON Converter & Formatter | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/yaml-json-converter");
+    await page.getByLabel("YAML input").fill("name: first\n---\nname: second\n");
+    await expect(page.getByRole("textbox", { name: "JSON output", exact: true })).toHaveValue(/"name": "first"/);
+    await expect(page.getByRole("textbox", { name: "JSON output", exact: true })).toHaveValue(/"name": "second"/);
+    await expect(page.getByLabel("Conversion statistics")).toContainText("2 documents");
+    await expect(page.getByText("Converted 2 YAML documents to JSON.")).toBeVisible();
+  });
+
+  test("converts JSON to YAML and swaps only a valid result", async ({ page }) => {
+    await page.getByRole("button", { name: "JSON to YAML" }).click();
+    await page.getByLabel("JSON input").fill('{"name":"Naminc","active":true}');
+    await expect(page.getByRole("textbox", { name: "YAML output", exact: true })).toHaveValue(/name: Naminc/);
+    await page.getByRole("button", { name: "Swap" }).click();
+    await expect(page.getByRole("button", { name: "YAML to JSON" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("textbox", { name: "YAML input", exact: true })).toHaveValue(/name: Naminc/);
+    await expect(page.getByRole("textbox", { name: "JSON output", exact: true })).toHaveValue(/"active":true/);
+  });
+
+  test("reports YAML and JSON errors with location in manual mode", async ({ page }) => {
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("Auto convert").uncheck();
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("YAML input").fill("name: one\nname: two\n");
+    await page.getByRole("button", { name: "Validate" }).click();
+    await expect(page.locator(".status-error")).toContainText("keys must be unique");
+    await expect(page.locator(".status-error")).toContainText("Line 2, column 1");
+
+    await page.getByRole("button", { name: "JSON to YAML" }).click();
+    await page.getByLabel("JSON input").fill('{\n  "name": "Naminc",\n  broken\n}');
+    await page.getByRole("button", { name: "Convert" }).click();
+    await expect(page.locator(".status-error")).toContainText("Line 3");
+    await expect(page.getByRole("textbox", { name: "YAML output", exact: true })).toHaveValue("");
+  });
+
+  test("uploads both formats, copies output, and downloads the correct extension", async ({ page }) => {
+    const yamlFixture = readFileSync(new URL("../fixtures/sample.yaml", import.meta.url));
+    const jsonFixture = readFileSync(new URL("../fixtures/sample.json", import.meta.url));
+    const upload = page.getByLabel("Open YAML or JSON file");
+    await upload.setInputFiles({ name: "sample.yaml", mimeType: "application/yaml", buffer: yamlFixture });
+    await expect(page.getByRole("textbox", { name: "JSON output", exact: true })).toHaveValue(/"name": "naminc.tech"/);
+    await page.getByRole("button", { name: "Copy JSON" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('"naminc.tech"');
+    const jsonDownload = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    expect((await jsonDownload).suggestedFilename()).toBe("converted.json");
+
+    await upload.setInputFiles({ name: "sample.json", mimeType: "application/json", buffer: jsonFixture });
+    await expect(page.getByRole("button", { name: "JSON to YAML" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("textbox", { name: "YAML output", exact: true })).toHaveValue(/name: naminc.tech/);
+    const yamlDownload = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    expect((await yamlDownload).suggestedFilename()).toBe("converted.yaml");
+  });
+
+  test("formats comments, applies settings, clears memory, and fits both themes", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.getByLabel("YAML input").fill("# keep this\nroot:\n  child: value\n");
+    await page.getByRole("button", { name: "Format input" }).click();
+    await expect(page.getByRole("textbox", { name: "YAML input", exact: true })).toHaveValue(/# keep this/);
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("JSON indentation").selectOption("4");
+    await expect(page.getByRole("textbox", { name: "JSON output", exact: true })).toHaveValue(/\n    "root"/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel("YAML input").focus();
+    await expect(page.getByLabel("YAML input")).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(page.getByLabel("YAML input")).toHaveValue("");
+    await page.getByRole("button", { name: "Use example" }).click();
+    await expect(page.getByRole("textbox", { name: "YAML input", exact: true })).toHaveValue(/naminc\.tech/);
+    await page.reload();
+    await expect(page.getByLabel("YAML input")).toHaveValue("");
+    expect(consoleErrors).toEqual([]);
+  });
+});

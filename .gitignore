@@ -10,3 +10,4 @@ test-results
 *.tsbuildinfo
 .agents/
 skills-lock.json
+CLAUDE.md

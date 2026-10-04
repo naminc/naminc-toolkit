@@ -9,6 +9,7 @@ import { TimestampTool } from "@/components/tools/timestamp-tool";
 import { TotpTool } from "@/components/tools/totp-tool";
 import { UrlTool } from "@/components/tools/url-tool";
 import { UuidTool } from "@/components/tools/uuid-tool";
+import { YamlJsonTool } from "@/components/tools/yaml-json-tool";
 
 const workspaces: Record<string, React.ComponentType> = {
   "api-client": ApiClientTool,
@@ -22,6 +23,7 @@ const workspaces: Record<string, React.ComponentType> = {
   "url-encoder": UrlTool,
   "hash-generator": HashTool,
   "regex-tester": RegexTool,
+  "yaml-json-converter": YamlJsonTool,
 };
 
 export function ToolWorkspace({ slug }: { slug: string }) {

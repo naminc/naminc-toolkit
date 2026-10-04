@@ -1,0 +1,7 @@
+{
+  "service": {
+    "name": "naminc.tech",
+    "enabled": true,
+    "ports": [80, 443]
+  }
+}

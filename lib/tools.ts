@@ -21,6 +21,36 @@ export type ToolDefinition = {
 
 export const tools: ToolDefinition[] = [
   {
+    slug: "yaml-json-converter",
+    name: "YAML ↔ JSON Converter",
+    seoTitle: "YAML to JSON Converter & Formatter",
+    metaDescription: "Convert YAML to JSON or JSON to YAML, format YAML 1.2, validate documents, and process local files entirely in your browser.",
+    shortDescription: "Convert, format, and validate YAML and JSON locally.",
+    description: "Convert YAML to JSON and JSON to YAML, format YAML 1.2 documents, validate syntax, and process local configuration files.",
+    category: "Data",
+    icon: "FileJson2",
+    keywords: ["YAML to JSON converter", "JSON to YAML converter", "YAML formatter", "YAML validator", "YAML parser", "convert YAML online", "YAML 1.2", "developer tools"],
+    relatedTools: ["json-formatter", "api-client", "base64", "url-encoder"],
+    popular: true,
+    privacyNote: "Your YAML and JSON are processed locally in your browser.",
+    howTo: ["Choose YAML to JSON or JSON to YAML, then paste content or open a local file.", "Convert automatically or use Convert, Format input, and Validate for explicit control.", "Review document and byte counts, then copy or download the valid output."],
+    example: { input: "service:\n  name: naminc.tech\n  enabled: true", output: "{\n  \"service\": {\n    \"name\": \"naminc.tech\",\n    \"enabled\": true\n  }\n}" },
+    sections: [
+      { title: "Convert YAML and JSON", body: "Use YAML to JSON for configuration data and JSON to YAML for a more human-readable representation. Format and validation actions help inspect either input before it is used elsewhere." },
+      { title: "YAML 1.2 and JSON", body: "YAML supports comments, anchors, aliases, multiline strings, and multiple documents. JSON has a smaller data model that is widely used by APIs and does not support comments." },
+      { title: "Multiple YAML documents", body: "A YAML stream may contain documents separated by three hyphens. This converter returns them as an ordered JSON array and reports the number of documents instead of silently selecting the first one." },
+      { title: "Anchors and aliases", body: "Anchors define reusable YAML values and aliases reference them. The converter resolves a bounded number of aliases and rejects excessive expansion or circular structures before producing JSON." },
+      { title: "Comments and number limits", body: "Formatting YAML preserves comments, but converting through JSON does not. Integers outside JavaScript's safe range, NaN, and Infinity are rejected so the converter never silently emits an inaccurate JSON number." },
+    ],
+    faqs: [
+      { question: "Does this converter upload my YAML or JSON?", answer: "No. Parsing, conversion, file reading, copying, and downloads happen inside your browser. Input and output are not stored after reload." },
+      { question: "Are YAML comments preserved?", answer: "Format input preserves YAML comments. Comments disappear when YAML is converted to JSON because JSON has no comment syntax." },
+      { question: "How are multiple YAML documents converted?", answer: "Each valid document becomes an item in one ordered JSON array. A parsing error identifies the affected document and stops the conversion." },
+      { question: "Are YAML custom tags supported?", answer: "No. The converter uses the YAML 1.2 core schema and rejects unresolved or custom tags instead of executing or interpreting application-specific values." },
+      { question: "Why are some large integers rejected?", answer: "Standard JSON numbers are commonly handled as JavaScript numbers. Integers outside the safe range could be rounded, so the converter reports an error rather than changing the value." },
+    ],
+  },
+  {
     slug: "color-converter",
     name: "Color Converter",
     seoTitle: "Color Converter & Picker",

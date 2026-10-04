@@ -416,6 +416,23 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
 .history-swatches button { flex: 0 0 auto; width: 36px; height: 36px; overflow: hidden; padding: 0; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; }
 .history-swatches i { display: block; width: 100%; height: 100%; }
 .color-live-status { padding: 8px 12px; border-top: 1px solid var(--line); color: var(--success); font-size: 10px; }
+.yaml-workspace { position: relative; }
+.yaml-mode-bar { position: relative; z-index: 8; }
+.yaml-settings { position: relative; }
+.yaml-settings summary { display: flex; min-height: 30px; align-items: center; gap: 6px; color: var(--ink-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; cursor: pointer; list-style: none; }
+.yaml-settings summary::-webkit-details-marker { display: none; }
+.yaml-settings[open] summary { color: var(--ink); }
+.yaml-settings-grid { position: absolute; z-index: 12; top: 37px; right: 0; display: grid; width: min(650px, calc(100vw - 48px)); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; padding: 13px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); box-shadow: 0 12px 30px color-mix(in srgb, var(--ink) 10%, transparent); }
+.yaml-settings-grid label { min-width: 0; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.yaml-settings-grid select, .yaml-settings-grid input[type="number"] { display: block; width: 100%; height: 31px; margin-top: 4px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--code); padding: 4px 7px; font-size: 10px; }
+.yaml-settings-grid select:focus, .yaml-settings-grid input:focus { border-color: var(--accent); }
+.yaml-settings-grid .yaml-check { display: flex; min-height: 31px; align-items: center; gap: 7px; align-self: end; color: var(--ink-secondary); }
+.yaml-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+.yaml-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.yaml-editors textarea { min-height: 360px; max-height: 620px; overflow: auto; }
+.yaml-metrics { display: flex; min-height: 35px; align-items: center; gap: 18px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
+.yaml-metrics span:last-child { margin-left: auto; }
+.yaml-roundtrip-note { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--code); color: var(--ink-tertiary); font-size: 10px; }
 
 .content-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 72px; margin-top: 76px; padding-top: 28px; border-top: 1px solid var(--line); }
 .content-grid > * { min-width: 0; }
@@ -552,6 +569,15 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
   .image-sample-panel > label:nth-of-type(1) { grid-column: 1 / 2; }
   .image-sample-panel > label:nth-of-type(2) { grid-column: 2 / 3; }
   .image-sample-panel > .icon-button { grid-column: 3; grid-row: 1 / 3; }
+  .yaml-mode-bar { align-items: flex-start; }
+  .yaml-settings { width: 100%; }
+  .yaml-settings-grid { right: auto; left: 0; width: 100%; grid-template-columns: 1fr 1fr; }
+  .yaml-actions { align-items: stretch; flex-direction: column; }
+  .yaml-actions .button-row { align-items: stretch; }
+  .yaml-actions .button { flex: 1 1 auto; }
+  .yaml-editors textarea { min-height: 250px; }
+  .yaml-metrics { flex-wrap: wrap; gap: 5px 14px; }
+  .yaml-metrics span:last-child { width: 100%; margin-left: 0; }
   .totp-results { border-top: 1px solid var(--line); border-left: 0; }
   .totp-toolbar { align-items: stretch; }
   .totp-settings { width: 100%; }
