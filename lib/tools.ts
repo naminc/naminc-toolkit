@@ -21,6 +21,37 @@ export type ToolDefinition = {
 
 export const tools: ToolDefinition[] = [
   {
+    slug: "cron-expression-parser",
+    name: "Cron Expression Parser",
+    seoTitle: "Cron Expression Generator & Parser",
+    metaDescription: "Parse, validate, and build Unix cron expressions, explain each field, and preview upcoming runs across IANA timezones in your browser.",
+    shortDescription: "Parse, build, and preview Unix cron schedules locally.",
+    description: "Parse and validate Unix cron expressions, build common schedules, explain each field, and inspect the next run times in local, UTC, and ISO formats.",
+    category: "Developer",
+    icon: "CalendarClock",
+    keywords: ["cron expression parser", "cron expression generator", "crontab generator", "cron schedule checker", "cron expression validator", "next cron run", "Unix cron syntax"],
+    relatedTools: ["timestamp-converter", "yaml-json-converter", "json-formatter", "api-client"],
+    popular: true,
+    privacyNote: "Your cron expressions are processed locally in your browser.",
+    howTo: ["Choose Standard 5 fields or the explicit With seconds 6 fields syntax.", "Enter an expression to parse it, or use Build and a preset to create one with structured controls.", "Review the field meanings and ten upcoming runs in browser local time, UTC, or a selected IANA timezone."],
+    example: { input: "*/15 9-17 * * 1-5", output: "Every 15 minutes, from 09:00 through 17:59, Monday through Friday." },
+    sections: [
+      { title: "Parse and build cron expressions", body: "Cron expressions describe recurring schedules for jobs, maintenance tasks, and automation. Parse mode validates an existing expression, while Build mode creates common schedules with structured controls and presets." },
+      { title: "The five Unix cron fields", body: "A standard expression contains minute, hour, day of month, month, and day of week. The optional six-field mode in this tool adds seconds at the beginning and must be selected explicitly." },
+      { title: "Wildcards, lists, ranges, and steps", body: "An asterisk matches every value, commas select a list, a hyphen defines a range, and a slash applies a step. For example, */15 means every 15 units and 1-5 in day of week means Monday through Friday." },
+      { title: "Day matching semantics", body: "This parser follows Vixie cron behavior: when both day of month and day of week are restricted, a date matches when either field matches. Confirm this behavior with the scheduler that will run the expression." },
+      { title: "Timezones and daylight saving time", body: "IANA timezone rules account for daylight saving changes. A local time inside a DST gap may not run, while an overlapping local time is shown once at its first occurrence." },
+      { title: "Unix cron is not Quartz cron", body: "Unix cron implementations differ from Quartz, AWS EventBridge, and systemd timers in field order, weekday numbering, and special syntax. This tool intentionally does not claim compatibility with those schedulers." },
+    ],
+    faqs: [
+      { question: "Does this tool run my cron job?", answer: "No. It parses the expression and calculates upcoming times locally. Your actual scheduler is responsible for executing jobs." },
+      { question: "Are six-field cron expressions detected automatically?", answer: "No. Select With seconds 6 fields explicitly so the first value cannot be mistaken for a minute field." },
+      { question: "What happens when day of month and day of week are both set?", answer: "This parser uses Vixie cron OR semantics: a matching value in either restricted day field qualifies. Other schedulers may differ." },
+      { question: "How does daylight saving time affect a schedule?", answer: "The selected IANA timezone supplies DST rules. Times that do not exist during a forward jump are skipped, and overlaps are listed once at the first occurrence." },
+      { question: "Will this expression work in Quartz or AWS EventBridge?", answer: "Not necessarily. Those systems use different field counts and special characters. Check the documentation for the scheduler where the expression will run." },
+    ],
+  },
+  {
     slug: "yaml-json-converter",
     name: "YAML ↔ JSON Converter",
     seoTitle: "YAML to JSON Converter & Formatter",

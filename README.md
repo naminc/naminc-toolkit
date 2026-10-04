@@ -12,6 +12,7 @@ Naminc Tech Tools is a collection of practical tools for developers and IT profe
 | --- | --- | --- |
 | Developer | [API Client](https://naminc.tech/tools/api-client) | Send direct browser requests or use the protected opt-in HTTP proxy. |
 | Developer | [Color Converter](https://naminc.tech/tools/color-converter) | Convert HEX, RGB, HSL, and OKLCH, check contrast, or sample a local image. |
+| Developer | [Cron Expression Parser](https://naminc.tech/tools/cron-expression-parser) | Parse, build, validate, and preview Unix cron schedules. |
 | Data | [YAML ↔ JSON Converter](https://naminc.tech/tools/yaml-json-converter) | Convert, format, and validate YAML 1.2 and JSON locally. |
 | Data | [JSON Formatter](https://naminc.tech/tools/json-formatter) | Format, minify, validate, upload, and download JSON. |
 | Security | [JWT Decoder](https://naminc.tech/tools/jwt-decoder) | Inspect JWT headers, claims, and readable time fields without verifying the signature. |

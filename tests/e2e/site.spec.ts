@@ -447,3 +447,73 @@ test.describe("YAML and JSON Converter", () => {
     expect(consoleErrors).toEqual([]);
   });
 });
+
+test.describe("Cron Expression Parser", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/cron-expression-parser");
+  });
+
+  test("loads metadata and parses a weekday schedule with ten runs", async ({ page }) => {
+    await expect(page).toHaveTitle("Cron Expression Generator & Parser | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/cron-expression-parser");
+    await page.getByRole("textbox", { name: "Cron expression", exact: true }).fill("*/15 9-17 * * 1-5");
+    await expect(page.getByText("Every 15 minutes, from 09:00 through 17:59, Monday through Friday.")).toBeVisible();
+    await expect(page.locator(".cron-field-row")).toHaveCount(6);
+    await expect(page.locator(".cron-run-row")).toHaveCount(10);
+    await expect(page.getByLabel("Next runs")).toContainText("GMT");
+  });
+
+  test("reports invalid fields and requires explicit six-field mode", async ({ page }) => {
+    await page.getByRole("textbox", { name: "Cron expression", exact: true }).fill("0 * * * * *");
+    await page.locator(".cron-expression-bar").getByRole("button", { name: "Parse", exact: true }).click();
+    await expect(page.locator(".status-error")).toContainText("Expected 5 fields but received 6.");
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("0 * * * * *");
+
+    await page.getByRole("button", { name: "With seconds 6 fields" }).click();
+    await expect(page.getByText("Expression parsed successfully.")).toBeVisible();
+    await expect(page.locator(".cron-section-heading small")).toHaveText("With seconds 6 fields");
+    await page.getByRole("textbox", { name: "Cron expression", exact: true }).fill("61 * * * * *");
+    await page.locator(".cron-expression-bar").getByRole("button", { name: "Parse", exact: true }).click();
+    await expect(page.getByLabel("Cron interpretation")).toContainText("Invalid expression");
+  });
+
+  test("builds presets and recalculates for an IANA timezone", async ({ page }) => {
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    await page.getByLabel("Cron preset").selectOption({ label: "Every weekday at 09:00" });
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("0 9 * * 1-5");
+    await page.getByLabel("Minute").selectOption("*/15");
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("*/15 9 * * 1-5");
+    await page.getByLabel("Timezone").selectOption("Asia/Ho_Chi_Minh");
+    await expect(page.locator(".cron-run-row")).toHaveCount(10);
+    await expect(page.getByLabel("Next runs")).toContainText("Asia/Ho_Chi_Minh");
+    await expect(page.getByText(/DST gaps are skipped/)).toBeVisible();
+  });
+
+  test("copies, downloads, clears memory, and fits mobile dark mode", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.getByRole("button", { name: "Use example" }).click();
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("*/15 9-17 * * 1-5");
+    await page.getByRole("button", { name: "Copy expression" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("*/15 9-17 * * 1-5");
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    expect((await downloadPromise).suggestedFilename()).toBe("cron-schedule.txt");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("textbox", { name: "Cron expression", exact: true }).focus();
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("");
+    await page.getByRole("textbox", { name: "Cron expression", exact: true }).fill("@hourly");
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "Cron expression", exact: true })).toHaveValue("");
+    expect(consoleErrors).toEqual([]);
+  });
+});

@@ -1,6 +1,7 @@
 import {
   Binary,
   Braces,
+  CalendarClock,
   Clock3,
   Fingerprint,
   FileJson2,
@@ -17,6 +18,7 @@ import {
 const icons: Record<string, LucideIcon> = {
   Binary,
   Braces,
+  CalendarClock,
   Clock3,
   Fingerprint,
   FileJson2,

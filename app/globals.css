@@ -433,6 +433,47 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
 .yaml-metrics { display: flex; min-height: 35px; align-items: center; gap: 18px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
 .yaml-metrics span:last-child { margin-left: auto; }
 .yaml-roundtrip-note { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--code); color: var(--ink-tertiary); font-size: 10px; }
+.cron-toolbar { min-height: 54px; }
+.cron-expression-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+.cron-expression-bar label { min-width: 0; }
+.cron-expression-bar label > span, .cron-builder-grid label > span { display: block; margin-bottom: 5px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.cron-expression-bar input { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--code); padding: 6px 10px; font-family: var(--font-geist-mono), monospace; font-size: 12px; }
+.cron-expression-bar input:focus { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.cron-expression-bar .button { min-height: 36px; }
+.cron-builder { border-bottom: 1px solid var(--line); background: var(--surface-muted); }
+.cron-builder-heading { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.cron-builder-heading > span { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 560; }
+.cron-builder-heading label { display: flex; align-items: center; gap: 8px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.cron-builder select, .cron-section-heading select { height: 31px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--surface); padding: 4px 7px; font-size: 10px; }
+.cron-builder select:focus, .cron-section-heading select:focus { border-color: var(--accent); }
+.cron-builder-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; padding: 11px 12px 14px; }
+.cron-builder-grid label { min-width: 0; }
+.cron-builder-grid select { width: 100%; }
+.cron-result-layout { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); min-height: 470px; }
+.cron-result-layout > section { min-width: 0; }
+.cron-runs { border-left: 1px solid var(--line); background: var(--code); }
+.cron-section-heading { display: flex; min-height: 46px; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.cron-section-heading small { font-size: 9px; }
+.cron-section-heading label { display: flex; align-items: center; gap: 7px; }
+.cron-empty, .cron-error { display: grid; min-height: 250px; place-content: center; gap: 5px; padding: 24px; text-align: center; }
+.cron-empty strong, .cron-error strong { font-size: 13px; font-weight: 560; }
+.cron-empty span, .cron-error span { max-width: 42ch; color: var(--ink-tertiary); font-size: 11px; }
+.cron-error { color: var(--danger); }
+.cron-summary { min-height: 72px; margin: 0; padding: 17px 12px; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 540; line-height: 1.5; }
+.cron-field-table { font-size: 10px; }
+.cron-field-row { display: grid; min-height: 42px; grid-template-columns: 96px 82px minmax(0, 1fr); align-items: center; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+.cron-field-row > span:last-child { color: var(--ink-secondary); }
+.cron-field-row code { overflow: hidden; color: var(--accent); text-overflow: ellipsis; white-space: nowrap; }
+.cron-field-head { min-height: 31px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.cron-semantics { margin: 0; padding: 11px 12px; color: var(--ink-tertiary); font-size: 10px; line-height: 1.5; }
+.cron-run-list { max-height: 520px; overflow: auto; }
+.cron-run-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 9px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.cron-run-index { padding-top: 2px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.cron-run-row > div { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }
+.cron-run-row time { min-width: 0; font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.cron-run-row span { color: var(--ink-tertiary); font-size: 9px; white-space: nowrap; }
+.cron-run-row code { grid-column: 1 / -1; overflow: hidden; color: var(--ink-tertiary); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.cron-dst-note { padding: 10px 12px; border-top: 1px solid var(--line); background: var(--warning-soft); color: var(--warning); font-size: 10px; }
 
 .content-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 72px; margin-top: 76px; padding-top: 28px; border-top: 1px solid var(--line); }
 .content-grid > * { min-width: 0; }
@@ -578,6 +619,18 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
   .yaml-editors textarea { min-height: 250px; }
   .yaml-metrics { flex-wrap: wrap; gap: 5px 14px; }
   .yaml-metrics span:last-child { width: 100%; margin-left: 0; }
+  .cron-toolbar { align-items: flex-start; }
+  .cron-expression-bar { grid-template-columns: 1fr; }
+  .cron-expression-bar .button { width: 100%; }
+  .cron-builder-heading { align-items: flex-start; flex-direction: column; }
+  .cron-builder-heading label, .cron-builder-heading select { width: 100%; }
+  .cron-builder-grid { grid-template-columns: 1fr 1fr; }
+  .cron-result-layout { grid-template-columns: 1fr; }
+  .cron-runs { border-top: 1px solid var(--line); border-left: 0; }
+  .cron-field-row { grid-template-columns: 82px 66px minmax(0, 1fr); gap: 7px; padding-inline: 9px; }
+  .cron-section-heading { align-items: flex-start; flex-direction: column; }
+  .cron-section-heading label, .cron-section-heading select { width: 100%; }
+  .cron-run-row { padding-inline: 9px; }
   .totp-results { border-top: 1px solid var(--line); border-left: 0; }
   .totp-toolbar { align-items: stretch; }
   .totp-settings { width: 100%; }
