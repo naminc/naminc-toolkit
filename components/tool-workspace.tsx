@@ -6,6 +6,7 @@ import { HashTool } from "@/components/tools/hash-tool";
 import { JsonTool } from "@/components/tools/json-tool";
 import { JwtTool } from "@/components/tools/jwt-tool";
 import { RegexTool } from "@/components/tools/regex-tool";
+import { SqlFormatterTool } from "@/components/tools/sql-formatter-tool";
 import { TimestampTool } from "@/components/tools/timestamp-tool";
 import { TotpTool } from "@/components/tools/totp-tool";
 import { UrlTool } from "@/components/tools/url-tool";
@@ -25,6 +26,7 @@ const workspaces: Record<string, React.ComponentType> = {
   "url-encoder": UrlTool,
   "hash-generator": HashTool,
   "regex-tester": RegexTool,
+  "sql-formatter": SqlFormatterTool,
   "yaml-json-converter": YamlJsonTool,
 };
 

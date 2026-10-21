@@ -433,6 +433,26 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
 .yaml-metrics { display: flex; min-height: 35px; align-items: center; gap: 18px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
 .yaml-metrics span:last-child { margin-left: auto; }
 .yaml-roundtrip-note { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--code); color: var(--ink-tertiary); font-size: 10px; }
+.sql-workspace { position: relative; }
+.sql-toolbar { position: relative; z-index: 8; }
+.sql-dialect-field { display: flex; align-items: center; gap: 9px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.sql-dialect-field select { width: 180px; height: 31px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--code); padding: 4px 7px; font-size: 10px; }
+.sql-dialect-field select:focus { border-color: var(--accent); }
+.sql-settings { position: relative; }
+.sql-settings summary { display: flex; min-height: 30px; align-items: center; gap: 6px; color: var(--ink-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; cursor: pointer; list-style: none; }
+.sql-settings summary::-webkit-details-marker { display: none; }
+.sql-settings[open] summary { color: var(--ink); }
+.sql-settings-grid { position: absolute; z-index: 12; top: 37px; right: 0; display: grid; width: min(720px, calc(100vw - 48px)); grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 11px; padding: 13px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); box-shadow: 0 12px 30px color-mix(in srgb, var(--ink) 10%, transparent); }
+.sql-settings-grid label { min-width: 0; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.sql-settings-grid select, .sql-settings-grid input[type="number"] { display: block; width: 100%; height: 31px; margin-top: 4px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--code); padding: 4px 7px; font-size: 10px; }
+.sql-settings-grid select:focus, .sql-settings-grid input:focus { border-color: var(--accent); }
+.sql-settings-grid .sql-check { display: flex; min-height: 31px; align-items: center; gap: 7px; align-self: end; color: var(--ink-secondary); }
+.sql-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+.sql-actions { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.sql-editors textarea { min-height: 390px; max-height: 680px; overflow: auto; tab-size: 2; font-variant-numeric: tabular-nums; }
+.sql-metrics { display: flex; min-height: 35px; align-items: center; gap: 18px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
+.sql-metrics span:nth-last-child(2) { margin-left: auto; }
+.sql-safety-note { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--warning-soft); color: var(--warning); font-size: 10px; }
 .cron-toolbar { min-height: 54px; }
 .cron-expression-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
 .cron-expression-bar label { min-width: 0; }
@@ -619,6 +639,16 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
   .yaml-editors textarea { min-height: 250px; }
   .yaml-metrics { flex-wrap: wrap; gap: 5px 14px; }
   .yaml-metrics span:last-child { width: 100%; margin-left: 0; }
+  .sql-toolbar { align-items: flex-start; }
+  .sql-dialect-field, .sql-dialect-field select, .sql-settings { width: 100%; }
+  .sql-dialect-field { align-items: flex-start; flex-direction: column; }
+  .sql-settings-grid { right: auto; left: 0; width: 100%; grid-template-columns: 1fr 1fr; }
+  .sql-actions { align-items: stretch; flex-direction: column; }
+  .sql-actions .button-row { align-items: stretch; }
+  .sql-actions .button { flex: 1 1 auto; }
+  .sql-editors textarea { min-height: 260px; }
+  .sql-metrics { flex-wrap: wrap; gap: 5px 14px; }
+  .sql-metrics span:nth-last-child(2) { width: 100%; margin-left: 0; }
   .cron-toolbar { align-items: flex-start; }
   .cron-expression-bar { grid-template-columns: 1fr; }
   .cron-expression-bar .button { width: 100%; }

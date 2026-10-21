@@ -517,3 +517,89 @@ test.describe("Cron Expression Parser", () => {
     expect(consoleErrors).toEqual([]);
   });
 });
+
+test.describe("SQL Formatter", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/sql-formatter");
+  });
+
+  test("loads metadata and formats SELECT and JOIN queries", async ({ page }) => {
+    await expect(page).toHaveTitle("SQL Formatter & Beautifier | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/sql-formatter");
+    await page.getByLabel("SQL input").fill("select u.id,u.name from users u left join teams t on t.id=u.team_id where u.active=true");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/LEFT JOIN/);
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/WHERE/);
+    await expect(page.locator(".local-note")).toHaveText("Your SQL is processed locally in your browser.");
+  });
+
+  test("switches dialect, keyword case, indentation, and auto formatting", async ({ page }) => {
+    await page.getByLabel("SQL input").fill("select id,name from users where active=true");
+    await page.getByLabel("SQL dialect").selectOption("postgresql");
+    await expect(page.getByText("Formatted successfully using PostgreSQL.")).toBeVisible();
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("SQL keyword case").selectOption("lower");
+    await page.getByLabel("SQL indentation").selectOption("4");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/select\n    id/);
+    await page.getByLabel("SQL dialect").selectOption("mysql");
+    await expect(page.getByText("Formatted successfully using MySQL.")).toBeVisible();
+    await page.getByLabel("Auto format SQL").uncheck();
+    await page.getByLabel("SQL input").fill("select count(*) from users");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue("");
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByRole("button", { name: "Format", exact: true }).click();
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/count\(\*\)/i);
+  });
+
+  test("keeps invalid input, clears stale output, and formats with the keyboard shortcut", async ({ page }) => {
+    const input = page.getByLabel("SQL input");
+    await input.fill("select id from users");
+    await expect(page.getByLabel("Formatted SQL output")).not.toHaveValue("");
+    await input.fill("select 'unterminated");
+    await expect(page.locator(".status-error")).toContainText("Line 1, column 8");
+    await expect(input).toHaveValue("select 'unterminated");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue("");
+
+    await input.fill("select id,name from users");
+    await input.press(process.platform === "darwin" ? "Meta+Enter" : "Control+Enter");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/SELECT/);
+    await page.getByRole("button", { name: "Format input" }).click();
+    await expect(input).toHaveValue(/SELECT/);
+  });
+
+  test("opens SQL files, rejects other files, copies, downloads, swaps, and clears", async ({ page }) => {
+    const upload = page.getByLabel("Open SQL file");
+    await upload.setInputFiles({ name: "query.txt", mimeType: "text/plain", buffer: Buffer.from("select 1;") });
+    await expect(page.locator(".status-error")).toContainText("Choose a .sql file.");
+    await upload.setInputFiles({ name: "query.sql", mimeType: "application/sql", buffer: Buffer.from("select id,name from users;") });
+    await expect(page.getByLabel("SQL input")).toHaveValue("select id,name from users;");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue(/SELECT/);
+    await page.getByRole("button", { name: "Copy output" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain("SELECT");
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    expect((await downloadPromise).suggestedFilename()).toBe("formatted.sql");
+    await page.getByRole("button", { name: "Swap" }).click();
+    await expect(page.getByLabel("SQL input")).toHaveValue(/SELECT/);
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(page.getByLabel("SQL input")).toHaveValue("");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue("");
+  });
+
+  test("uses an example, clears memory on reload, and fits mobile dark mode", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.getByRole("button", { name: "Use example" }).click();
+    await expect(page.getByLabel("SQL input")).toHaveValue(/WITH active_projects/);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel("SQL input").focus();
+    await expect(page.getByLabel("SQL input")).toBeFocused();
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.reload();
+    await expect(page.getByLabel("SQL input")).toHaveValue("");
+    await expect(page.getByLabel("Formatted SQL output")).toHaveValue("");
+    expect(consoleErrors).toEqual([]);
+  });
+});
