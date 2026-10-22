@@ -433,6 +433,42 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
 .yaml-metrics { display: flex; min-height: 35px; align-items: center; gap: 18px; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; }
 .yaml-metrics span:last-child { margin-left: auto; }
 .yaml-roundtrip-note { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--code); color: var(--ink-tertiary); font-size: 10px; }
+.extractor-workspace { position: relative; }
+.extractor-mode-bar { min-height: 48px; }
+.extractor-mode-note { margin-left: auto; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.extractor-config { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface-muted); }
+.extractor-config label, .extractor-settings-grid label { min-width: 0; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.extractor-config label > span { display: block; margin-bottom: 4px; }
+.extractor-config select, .extractor-config input, .extractor-settings-grid select { width: 100%; height: 32px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--surface); padding: 5px 8px; font-size: 10px; }
+.extractor-config select:focus, .extractor-config input:focus, .extractor-settings-grid select:focus { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+.extractor-columns-field input { font-family: var(--font-geist-mono), monospace; }
+.extractor-actions { display: flex; min-height: 51px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.extractor-settings { border-bottom: 1px solid var(--line); }
+.extractor-settings summary { display: flex; min-height: 38px; align-items: center; gap: 6px; padding: 7px 12px; color: var(--ink-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; cursor: pointer; list-style: none; }
+.extractor-settings summary::-webkit-details-marker { display: none; }
+.extractor-settings[open] summary { border-bottom: 1px solid var(--line); color: var(--ink); }
+.extractor-settings-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; padding: 11px 12px 13px; background: var(--surface-muted); }
+.extractor-settings-grid select { display: block; margin-top: 4px; }
+.extractor-settings-grid .extractor-check { display: flex; min-height: 32px; align-items: center; gap: 7px; align-self: end; color: var(--ink-secondary); }
+.extractor-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+.extractor-editors textarea { min-height: 310px; max-height: 560px; overflow: auto; tab-size: 2; font-variant-numeric: tabular-nums; }
+.extractor-metrics { display: flex; min-height: 35px; align-items: center; gap: 8px 16px; overflow-x: auto; padding: 6px 12px; border-top: 1px solid var(--line); color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.extractor-row-note, .extractor-sensitive-note { padding: 8px 12px; border-top: 1px solid var(--line); color: var(--warning); font-size: 10px; }
+.extractor-row-note { background: var(--code); }
+.extractor-sensitive-note { background: var(--warning-soft); }
+.extractor-preview { border-top: 1px solid var(--line); background: var(--code); }
+.extractor-preview-heading { display: flex; min-height: 47px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.extractor-preview-heading > div { display: flex; align-items: baseline; gap: 10px; }
+.extractor-preview-heading strong { font-size: 11px; font-weight: 600; }
+.extractor-preview-heading span, .extractor-preview-heading small { color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
+.extractor-table-scroll { max-height: 310px; overflow: auto; }
+.extractor-preview table { width: max-content; min-width: 100%; border-collapse: collapse; font-family: var(--font-geist-mono), monospace; font-size: 10px; table-layout: fixed; }
+.extractor-preview th, .extractor-preview td { min-width: 132px; max-width: 220px; height: 34px; overflow: hidden; padding: 6px 9px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.extractor-preview th:first-child { min-width: 52px; width: 52px; color: var(--ink-tertiary); }
+.extractor-preview thead th { position: sticky; z-index: 2; top: 0; background: var(--surface-muted); color: var(--ink-secondary); font-weight: 550; }
+.extractor-preview .selected { background: var(--accent-soft); color: var(--ink); }
+.extractor-preview tr.missing > th { color: var(--warning); }
+.extractor-preview-empty { display: grid; min-height: 115px; place-items: center; color: var(--ink-tertiary); font-size: 11px; }
 .sql-workspace { position: relative; }
 .sql-toolbar { position: relative; z-index: 8; }
 .sql-dialect-field { display: flex; align-items: center; gap: 9px; color: var(--ink-tertiary); font-family: var(--font-geist-mono), monospace; font-size: 9px; }
@@ -639,6 +675,16 @@ html[data-theme="dark"] .checkerboard { background-color: #292b28; background-im
   .yaml-editors textarea { min-height: 250px; }
   .yaml-metrics { flex-wrap: wrap; gap: 5px 14px; }
   .yaml-metrics span:last-child { width: 100%; margin-left: 0; }
+  .extractor-mode-bar { align-items: flex-start; }
+  .extractor-mode-note { margin-left: 0; }
+  .extractor-config { grid-template-columns: 1fr; }
+  .extractor-actions { align-items: stretch; flex-direction: column; }
+  .extractor-actions .button-row, .extractor-actions .button { width: 100%; }
+  .extractor-actions .button { flex: 1 1 0; }
+  .extractor-settings-grid { grid-template-columns: 1fr 1fr; }
+  .extractor-editors textarea { min-height: 240px; }
+  .extractor-preview-heading { align-items: flex-start; flex-direction: column; }
+  .extractor-preview-heading > div { align-items: flex-start; flex-direction: column; gap: 2px; }
   .sql-toolbar { align-items: flex-start; }
   .sql-dialect-field, .sql-dialect-field select, .sql-settings { width: 100%; }
   .sql-dialect-field { align-items: flex-start; flex-direction: column; }

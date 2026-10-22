@@ -14,6 +14,7 @@ Naminc Tech Tools is a collection of practical tools for developers and IT profe
 | Developer | [Color Converter](https://naminc.tech/tools/color-converter) | Convert HEX, RGB, HSL, and OKLCH, check contrast, or sample a local image. |
 | Developer | [Cron Expression Parser](https://naminc.tech/tools/cron-expression-parser) | Parse, build, validate, and preview Unix cron schedules. |
 | Data | [SQL Formatter](https://naminc.tech/tools/sql-formatter) | Format SQL across common database dialects entirely in the browser. |
+| Data | [Text Column Extractor](https://naminc.tech/tools/text-column-extractor) | Extract and reorder fields from literal, CSV, and TSV-style delimited text. |
 | Data | [YAML ↔ JSON Converter](https://naminc.tech/tools/yaml-json-converter) | Convert, format, and validate YAML 1.2 and JSON locally. |
 | Data | [JSON Formatter](https://naminc.tech/tools/json-formatter) | Format, minify, validate, upload, and download JSON. |
 | Security | [JWT Decoder](https://naminc.tech/tools/jwt-decoder) | Inspect JWT headers, claims, and readable time fields without verifying the signature. |
@@ -44,6 +45,7 @@ Local processing protects data from being submitted to this application. It cann
 - React 19
 - Geist Sans and Geist Mono
 - Lucide Icons
+- Papa Parse for CSV-compatible quoted field parsing
 - MDX for technical notes
 - Vitest for unit tests
 - Playwright for browser tests
@@ -132,6 +134,7 @@ lib/
   server/                SSRF validation, pinned transport, rate limiting, and handler
   totp.ts                Base32, otpauth, and RFC 6238 implementation
   sql-formatter.ts       Browser-only SQL formatter adapter and file validation
+  text-column-extractor.ts  Delimiter parsing, column extraction, preview, and file validation
 tests/
   unit/                  Vitest conversion and RFC test vectors
   e2e/                   Playwright workflows for desktop and mobile

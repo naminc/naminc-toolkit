@@ -8,6 +8,7 @@ import { JwtTool } from "@/components/tools/jwt-tool";
 import { RegexTool } from "@/components/tools/regex-tool";
 import { SqlFormatterTool } from "@/components/tools/sql-formatter-tool";
 import { TimestampTool } from "@/components/tools/timestamp-tool";
+import { TextColumnExtractorTool } from "@/components/tools/text-column-extractor-tool";
 import { TotpTool } from "@/components/tools/totp-tool";
 import { UrlTool } from "@/components/tools/url-tool";
 import { UuidTool } from "@/components/tools/uuid-tool";
@@ -21,6 +22,7 @@ const workspaces: Record<string, React.ComponentType> = {
   "jwt-decoder": JwtTool,
   "base64": Base64Tool,
   "timestamp-converter": TimestampTool,
+  "text-column-extractor": TextColumnExtractorTool,
   "totp-generator": TotpTool,
   "uuid-generator": UuidTool,
   "url-encoder": UrlTool,

@@ -603,3 +603,123 @@ test.describe("SQL Formatter", () => {
     expect(consoleErrors).toEqual([]);
   });
 });
+
+test.describe("Text Column Extractor", () => {
+  test.beforeEach(async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/tools/text-column-extractor");
+  });
+
+  test("loads metadata, extracts pipe columns, and highlights the preview", async ({ page }) => {
+    await expect(page).toHaveTitle("Text Column Extractor & Delimited Text Splitter | Naminc Tech Tools");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://naminc.tech/tools/text-column-extractor");
+    await page.getByLabel("Delimited text input").fill("alpha|example-value|A1B2C3\nbravo|another-value|D4E5F6");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("alpha|A1B2C3\nbravo|D4E5F6");
+    await expect(page.getByRole("columnheader", { name: "Column 1" })).toHaveClass(/selected/);
+    await expect(page.getByRole("columnheader", { name: "Column 3" })).toHaveClass(/selected/);
+    await expect(page.getByLabel("Delimited text preview")).toContainText("example-value");
+    await expect(page.locator(".local-note")).toHaveText("Your text is processed locally in your browser.");
+  });
+
+  test("reorders ranges and supports custom, tab, output, and trim settings", async ({ page }) => {
+    const input = page.getByLabel("Delimited text input");
+    await input.fill(" first :: middle :: third :: fourth ");
+    await page.getByLabel("Input delimiter").selectOption("custom");
+    await page.getByLabel("Custom input delimiter").fill("::");
+    await page.getByLabel("Column selection").fill("3,1-2");
+    await page.getByLabel("Output delimiter").selectOption("comma");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("third,first,middle");
+
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("Trim values").uncheck();
+    await expect(page.getByLabel("Extracted text output")).toHaveValue(" third , first , middle ");
+    await page.getByText("Advanced settings", { exact: true }).click();
+
+    await page.getByLabel("Input delimiter", { exact: true }).selectOption("tab");
+    await page.getByLabel("Output delimiter").selectOption("same");
+    await page.getByLabel("Column selection").fill("2");
+    await input.fill("alpha\tbravo\tcharlie");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("bravo");
+  });
+
+  test("handles missing columns, duplicate rows, and clears stale output on error", async ({ page }) => {
+    const input = page.getByLabel("Delimited text input");
+    await input.fill("a|b|c\nshort|only\na|b|c");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("a|c\nshort|\na|c");
+    await expect(page.getByText("Rows missing selected columns: 2.")).toBeVisible();
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("Remove duplicate rows").check();
+    await page.getByLabel("Missing column strategy").selectOption("skip");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("a|c");
+    await page.getByLabel("Missing column strategy").selectOption("error");
+    await expect(page.locator(".status-error")).toContainText("1 row does not contain every selected column. Row 2.");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("");
+    await expect(input).toHaveValue("a|b|c\nshort|only\na|b|c");
+  });
+
+  test("parses quoted CSV fields and reports an unclosed quote", async ({ page }) => {
+    await page.getByRole("button", { name: "CSV-compatible" }).click();
+    await page.getByLabel("Input delimiter").selectOption("comma");
+    await page.getByLabel("Output delimiter").selectOption("pipe");
+    await page.getByLabel("Column selection").fill("1,2");
+    await page.getByLabel("Delimited text input").fill('alpha,"example, value"\nbravo,"line one\nline two"');
+    await expect(page.getByLabel("Extracted text output")).toHaveValue('alpha|example, value\nbravo|"line one\nline two"');
+    await expect(page.getByLabel("Extraction statistics")).toContainText("2 output rows");
+    await page.getByLabel("Delimited text input").fill('alpha,"unfinished');
+    await expect(page.locator(".status-error")).toContainText("A quoted field is not closed. Row 1.");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("");
+  });
+
+  test("supports manual extraction and the editor keyboard shortcut", async ({ page }) => {
+    await page.getByText("Advanced settings", { exact: true }).click();
+    await page.getByLabel("Auto extract").uncheck();
+    await page.getByText("Advanced settings", { exact: true }).click();
+    const input = page.getByLabel("Delimited text input");
+    await input.fill("alpha|middle|omega");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("");
+    await page.getByRole("button", { name: "Extract", exact: true }).click();
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("alpha|omega");
+    await input.fill("bravo|middle|delta");
+    await input.press(process.platform === "darwin" ? "Meta+Enter" : "Control+Enter");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("bravo|delta");
+  });
+
+  test("opens files, rejects unsupported files, copies, downloads, swaps, and clears", async ({ page }) => {
+    const upload = page.getByLabel("Open delimited text file");
+    await upload.setInputFiles({ name: "rows.json", mimeType: "application/json", buffer: Buffer.from("{}") });
+    await expect(page.locator(".status-error")).toContainText("Choose a .txt, .csv, .tsv, or .log file.");
+    await upload.setInputFiles({ name: "rows.csv", mimeType: "text/csv", buffer: Buffer.from("alpha,middle,omega") });
+    await expect(page.getByText(/Loaded a local \.csv file/)).toContainText("Consider the Comma delimiter");
+    await page.getByLabel("Input delimiter", { exact: true }).selectOption("comma");
+    await page.getByLabel("Output delimiter").selectOption("comma");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("alpha,omega");
+    await page.getByRole("button", { name: "Copy output" }).click();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("alpha,omega");
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).click();
+    expect((await downloadPromise).suggestedFilename()).toBe("extracted-columns.csv");
+    await page.getByRole("button", { name: "Swap" }).click();
+    await expect(page.getByLabel("Delimited text input")).toHaveValue("alpha,omega");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("alpha,middle,omega");
+    await page.getByRole("button", { name: "Clear", exact: true }).click();
+    await expect(page.getByLabel("Delimited text input")).toHaveValue("");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("");
+  });
+
+  test("uses synthetic example data, clears memory on reload, and fits mobile dark mode", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    await page.getByRole("button", { name: "Use example" }).click();
+    await expect(page.getByLabel("Delimited text input")).toHaveValue(/alpha\|example-value\|A1B2C3/);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel("Delimited text input").focus();
+    await expect(page.getByLabel("Delimited text input")).toBeFocused();
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.reload();
+    await expect(page.getByLabel("Delimited text input")).toHaveValue("");
+    await expect(page.getByLabel("Extracted text output")).toHaveValue("");
+    expect(consoleErrors).toEqual([]);
+  });
+});
